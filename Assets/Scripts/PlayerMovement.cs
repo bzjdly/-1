@@ -10,12 +10,19 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField]
     private float deceleration = 30f; // 减速度
 
+    [Header("血量设置")]
+    [Tooltip("最大血量")]
+    public int maxHP = 5;
+    [Tooltip("当前血量")]
+    public int currentHP;
+
     private Rigidbody2D rb;
     private Vector2 moveInput;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        currentHP = maxHP;
     }
 
     void Update()
@@ -54,5 +61,14 @@ public class PlayerMovement : MonoBehaviour
 
         // 限制速度不超过最大移动速度，防止通过反复输入叠加速度
         rb.velocity = Vector2.ClampMagnitude(rb.velocity, moveSpeed);
+    }
+
+    public void OnHit(int damage = 1)
+    {
+        currentHP -= damage;
+        if (currentHP <= 0)
+        {
+            Debug.Log("玩家死亡");
+        }
     }
 } 

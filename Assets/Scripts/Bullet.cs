@@ -2,16 +2,63 @@ using UnityEngine;
 
 public class Bullet : MonoBehaviour
 {
+    [Header("基础设置")]
     public float lifeTime = 2f;
+    [Tooltip("速度衰减系数（每秒）")]
+    public float speedDamping = 0.98f;
+    [Tooltip("最低有效伤害速度")]
+    public float minDamageSpeed = 3f;
+    [Tooltip("撞墙反弹动能保留率")]
+    public float wallBounceFactor = 0.6f;
+    [Tooltip("击退基准系数")]
+    public float knockbackBase = 1.2f;
+
+    private Rigidbody2D rb;
+    private float timer;
+
+    void Awake()
+    {
+        rb = GetComponent<Rigidbody2D>();
+    }
 
     void Start()
     {
         Destroy(gameObject, lifeTime);
     }
 
+    void FixedUpdate()
+    {
+        // 速度随时间衰减
+        rb.velocity *= Mathf.Pow(speedDamping, Time.fixedDeltaTime * 60f);
+    }
+
     void OnCollisionEnter2D(Collision2D collision)
     {
-        // 这里可以扩展击中敌人等逻辑
-        Destroy(gameObject);
+        // 撞墙反弹（假设墙体Layer为"Wall"）
+        if (collision.gameObject.layer == LayerMask.NameToLayer("Wall"))
+        {
+            // 反弹：速度沿法线反射，并损失动能
+            Vector2 reflect = Vector2.Reflect(rb.velocity, collision.contacts[0].normal);
+            rb.velocity = reflect * wallBounceFactor;
+        }
+        // 击中敌人
+        if (collision.gameObject.CompareTag("Enemy"))
+        {
+            float speed = rb.velocity.magnitude;
+            if (speed >= minDamageSpeed)
+            {
+                Enemy enemy = collision.gameObject.GetComponent<Enemy>();
+                if (enemy != null)
+                {
+                    // 击退方向为子弹当前速度方向
+                    Vector2 knockDir = rb.velocity.normalized;
+                    float knockPower = speed * knockbackBase;
+                    enemy.OnHit(knockDir, knockPower, 1);
+                }
+                // 这里可扩展造成伤害等逻辑
+            }
+            // 子弹击中敌人后销毁
+            Destroy(gameObject);
+        }
     }
 } 
