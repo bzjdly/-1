@@ -122,6 +122,61 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &1379300756
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1379300758}
+  - component: {fileID: 1379300757}
+  m_Layer: 0
+  m_Name: CameraManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1379300757
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1379300756}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 750195136f21eee47b1da0a7771795d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shakeDuration: 0.2
+  shakeMagnitude: 0.2
+  directionalShakeDir: {x: 1, y: 0}
+  directionalShakeMagnitude: 0.4
+  directionalShakeDuration: 0.15
+  directionalShakeSideMagnitude: 0.08
+  directionalShakeSideDir: {x: 0, y: 1}
+  zoomTarget: 4.5
+  zoomSpeed: 10
+  slowTimeScale: 0.5
+  slowDuration: 0.2
+--- !u!4 &1379300758
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1379300756}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -3.096798, y: 0.7732049, z: 0.06018298}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1526871862
 GameObject:
   m_ObjectHideFlags: 0
@@ -426,8 +481,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   bulletPrefab: {fileID: 1574535889928348843, guid: 69923627c20922d45a6d0f5f0e390d12, type: 3}
-  bulletSpeed: 20
-  fireRate: 0.5
+  bulletSpeed: 50
+  bulletCount: 10
+  spreadAngle: 10
+  speedVariance: 3
+  spreadDuration: 0.01
+  fireRate: 0.1
   firePoint: {fileID: 2141007419}
 --- !u!212 &1977922006
 SpriteRenderer:
@@ -576,3 +635,4 @@ SceneRoots:
   - {fileID: 1526871865}
   - {fileID: 1696293678}
   - {fileID: 7660691575862815057}
+  - {fileID: 1379300758}

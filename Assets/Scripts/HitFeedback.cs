@@ -35,6 +35,20 @@ public class HitFeedback : MonoBehaviour
     [Tooltip("慢动作持续时间（秒）")]
     public float slowDuration = 0.2f;
 
+    [Header("摄像机跟随设置")]
+    [Tooltip("跟随目标（玩家）")]
+    public Transform followTarget;
+    [Tooltip("摄像机跟随平滑速度")]
+    public float followSmooth = 8f;
+    [Tooltip("世界左边界")]
+    public float worldLeft = -10f;
+    [Tooltip("世界右边界")]
+    public float worldRight = 10f;
+    [Tooltip("世界下边界")]
+    public float worldBottom = -5f;
+    [Tooltip("世界上边界")]
+    public float worldTop = 5f;
+
     private Camera mainCam;
     private float originalSize;
     private Vector3 originalPos;
@@ -50,6 +64,28 @@ public class HitFeedback : MonoBehaviour
         mainCam = Camera.main;
         if (mainCam != null)
             originalSize = mainCam.orthographicSize;
+    }
+
+    void LateUpdate()
+    {
+        CameraFollowWithBounds();
+    }
+
+    // 摄像机跟随玩家并限制在世界边界内
+    void CameraFollowWithBounds()
+    {
+        if (followTarget == null || mainCam == null) return;
+        Vector3 targetPos = followTarget.position;
+        float camHeight = mainCam.orthographicSize;
+        float camWidth = camHeight * mainCam.aspect;
+        float minX = worldLeft + camWidth;
+        float maxX = worldRight - camWidth;
+        float minY = worldBottom + camHeight;
+        float maxY = worldTop - camHeight;
+        float x = Mathf.Clamp(targetPos.x, minX, maxX);
+        float y = Mathf.Clamp(targetPos.y, minY, maxY);
+        Vector3 desired = new Vector3(x, y, mainCam.transform.position.z);
+        mainCam.transform.position = Vector3.Lerp(mainCam.transform.position, desired, followSmooth * Time.unscaledDeltaTime);
     }
 
     // 摄像机震动
@@ -72,6 +108,7 @@ public class HitFeedback : MonoBehaviour
             elapsed += Time.unscaledDeltaTime;
             yield return null;
         }
+        // 强制回到原始位置
         mainCam.transform.position = originalPos;
     }
 
@@ -104,6 +141,7 @@ public class HitFeedback : MonoBehaviour
             elapsed += Time.unscaledDeltaTime;
             yield return null;
         }
+        // 强制回到原始位置
         mainCam.transform.position = originalPos;
     }
 

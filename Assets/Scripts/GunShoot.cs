@@ -30,6 +30,12 @@ public class GunShoot : MonoBehaviour
         fireTimer += Time.deltaTime;
         if (Input.GetMouseButton(0) && fireTimer >= fireRate)
         {
+            // 方向震动，主方向为枪口方向
+            if (HitFeedback.Instance != null && firePoint != null)
+            {
+                Vector2 dir = firePoint.right;
+                HitFeedback.Instance.DirectionalShake(dir);
+            }
             StartCoroutine(ShootSpread());
             fireTimer = 0f;
         }
