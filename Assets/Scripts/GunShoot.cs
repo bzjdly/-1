@@ -23,19 +23,33 @@ public class GunShoot : MonoBehaviour
     [Tooltip("子弹发射点")]
     public Transform firePoint;
 
+    [Header("打击感设置")]
+    [Tooltip("开枪时屏幕缩放的目标Orthographic Size")]
+    public float shootZoomSize = 7f;
+    [Tooltip("开枪时屏幕缩放持续时间")]
+    public float shootZoomDuration = 0.1f;
+    [Tooltip("开枪时屏幕恢复正常大小所需时间")]
+    public float shootZoomResetDuration = 0.2f;
+
     private float fireTimer = 0f;
-    private static int shootBatchCounter = 0; // 用于生成唯一的批量ID
+    private static int shootBatchCounter = 0;
+    private bool isZooming = false;
 
     void Update()
     {
         fireTimer += Time.deltaTime;
-        if (Input.GetMouseButton(0) && fireTimer >= fireRate)
+        if (Input.GetMouseButtonDown(0) && fireTimer >= fireRate)
         {
             // 方向震动，主方向为枪口方向
             if (HitFeedback.Instance != null && firePoint != null)
             {
                 Vector2 dir = firePoint.right;
                 HitFeedback.Instance.DirectionalShake(dir);
+                
+                if (!isZooming)
+                {
+                    StartCoroutine(ShootZoomEffect());
+                }
             }
             StartCoroutine(ShootSpread());
             fireTimer = 0f;
@@ -49,9 +63,9 @@ public class GunShoot : MonoBehaviour
             yield break;
         }
 
-        shootBatchCounter++; // 为本次射击生成一个新的批量ID
+        shootBatchCounter++;
         int currentBatchID = shootBatchCounter;
-        int totalBulletsInBatch = bulletCount; // 本批次总子弹数量
+        int totalBulletsInBatch = bulletCount;
 
         float startAngle = -spreadAngle * 0.5f;
         float angleStep = totalBulletsInBatch > 1 ? spreadAngle / (totalBulletsInBatch - 1) : 0f;
@@ -61,9 +75,8 @@ public class GunShoot : MonoBehaviour
         {
             float angleOffset = startAngle + angleStep * i;
             Quaternion rot = firePoint.rotation * Quaternion.Euler(0, 0, angleOffset);
-            GameObject bulletGO = Instantiate(bulletPrefab, firePoint.position, rot); // 修改变量名方便获取组件
+            GameObject bulletGO = Instantiate(bulletPrefab, firePoint.position, rot);
             
-            // 获取 Bullet 组件并设置批量ID和总子弹数量
             Bullet bullet = bulletGO.GetComponent<Bullet>();
             if (bullet != null)
             {
@@ -73,7 +86,7 @@ public class GunShoot : MonoBehaviour
                 Debug.LogWarning($"子弹预制体 \"{bulletPrefab.name}\" 没有挂载 Bullet 脚本！");
             }
 
-            Rigidbody2D rb = bulletGO.GetComponent<Rigidbody2D>(); // 使用新的变量名
+            Rigidbody2D rb = bulletGO.GetComponent<Rigidbody2D>();
             if (rb != null)
             {
                 float speedOffset = Random.Range(-speedVariance, speedVariance);
@@ -83,5 +96,20 @@ public class GunShoot : MonoBehaviour
             if (i < totalBulletsInBatch - 1)
                 yield return new WaitForSeconds(interval);
         }
+    }
+
+    IEnumerator ShootZoomEffect()
+    {
+        isZooming = true;
+        if (HitFeedback.Instance != null)
+        {
+            HitFeedback.Instance.CameraZoom(shootZoomSize, shootZoomDuration);
+
+            yield return new WaitForSeconds(shootZoomDuration);
+
+            HitFeedback.Instance.ResetZoom(shootZoomResetDuration);
+        }
+        yield return new WaitForSeconds(shootZoomResetDuration);
+        isZooming = false;
     }
 } 
