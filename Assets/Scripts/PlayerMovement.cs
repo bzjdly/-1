@@ -82,7 +82,6 @@ public class PlayerMovement : MonoBehaviour
         if (currentHP <= 0) return; // 避免重复伤害已死亡的玩家
 
         currentHP -= damageAmount;
-        Debug.Log($"玩家受到 {damageAmount} 点伤害，当前血量：{currentHP}");
 
         // 触发玩家受击反馈
         if (HitFeedback.Instance != null)

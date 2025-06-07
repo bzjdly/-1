@@ -56,6 +56,8 @@ public class Enemy : MonoBehaviour
     [Header("击退衰减")]
     [Tooltip("击退期间线性阻力的倍率（越大衰减越快）")]
     public float knockbackDragMultiplier = 5f;
+    [Tooltip("敌人死亡后等待动量归零的最小速度阈值")]
+    public float minVelocityForDestroy = 0.1f;
 
     [Header("满喷打击反馈")]
     [Tooltip("满喷时慢动作持续时间（秒）")]
@@ -88,6 +90,9 @@ public class Enemy : MonoBehaviour
     // 新增：是否处于满喷击退状态
     private bool isFullShotgunKnockedBack = false;
 
+    // 新增：标记敌人是否进入死亡过程
+    private bool isDying = false;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -100,6 +105,19 @@ public class Enemy : MonoBehaviour
 
     void FixedUpdate()
     {
+        // 如果敌人正在死亡过程中，则只处理其动量归零逻辑
+        if (isDying)
+        {
+            // 确保敌人不再进行寻路或被击退处理
+            rb.velocity = Vector2.Lerp(rb.velocity, Vector2.zero, Time.fixedDeltaTime * 5f); // 确保减速，即使没有外部阻力
+
+            if (rb.velocity.magnitude <= minVelocityForDestroy)
+            {
+                Destroy(gameObject); // 动量归零后销毁
+            }
+            return; // 阻止后续的移动和击退逻辑
+        }
+
         if (player == null)
             return;
 
@@ -136,7 +154,7 @@ public class Enemy : MonoBehaviour
         } else
         {
             // 如果 EnemyManager 实例不存在，则保持原有朝向玩家的移动逻辑作为备用或错误提示
-            Debug.LogWarning("场景中没有 EnemyManager 实例，敌人将使用旧的追踪逻辑！");
+            // Debug.LogWarning("场景中没有 EnemyManager 实例，敌人将使用旧的追踪逻辑！");
             Vector2 dir = (player.position - transform.position).normalized;
             rb.velocity = dir * moveSpeed;
         }
@@ -144,6 +162,8 @@ public class Enemy : MonoBehaviour
 
     public void OnHit(Vector2 hitDir, float hitPower, int damage = 1)
     {
+        if (isDying) return; // 已死亡的敌人不再受伤害
+
         if (hitDir != Vector2.zero)
         {
              rb.AddForce(hitDir * hitPower * knockbackMultiplier, ForceMode2D.Impulse);
@@ -156,8 +176,8 @@ public class Enemy : MonoBehaviour
         
         if (currentHP <= 0)
         {
-            Destroy(gameObject);
-            return;
+            StartDyingProcess(); // 触发死亡过程，而非立即销毁
+            // return; // 不再立即返回，让粒子效果等逻辑继续执行
         }
         if (hitParticlePrefab != null)
         {
@@ -272,7 +292,14 @@ public class Enemy : MonoBehaviour
     {
         isKnockedBack = true;
         hitStopTimer = hitStopTime;
-        rb.drag = originalDrag * knockbackDragMultiplier;
+        if (isFullShotgunKnockedBack) // 如果是满喷击退，减少速度衰减
+        {
+            rb.drag = 0.01f; // 几乎无阻力，模拟无速度衰减
+        }
+        else
+        {
+            rb.drag = originalDrag * knockbackDragMultiplier; // 普通击退应用阻力
+        }
     }
 
     void EndKnockback()
@@ -287,6 +314,7 @@ public class Enemy : MonoBehaviour
     // 新增：处理来自子弹的批量击中信息 (添加 hitDir 和 hitPower 参数)
     public void OnBulletHitBatch(int batchID, int totalBulletsInBatch, Vector2 hitDir, float hitPower)
     {
+        // Debug.Log($"{gameObject.name} 收到批次 {batchID} 的子弹击中，当前计数: {bulletBatchHits[batchID]}/{totalBulletsInBatch}"); // 调试日志
         // 增加对应批次的击中计数
         if (!bulletBatchHits.ContainsKey(batchID))
         {
@@ -294,16 +322,13 @@ public class Enemy : MonoBehaviour
         }
         bulletBatchHits[batchID]++;
 
-        Debug.Log($"{gameObject.name} 收到批次 {batchID} 的子弹击中，当前计数: {bulletBatchHits[batchID]}/{totalBulletsInBatch}");
-
         // 检查是否达到全弹命中
         if (bulletBatchHits[batchID] == totalBulletsInBatch)
         {
-            Debug.Log($"敌人 {gameObject.name} 全弹命中! BatchID: {batchID}");
-
+            // Debug.Log($"敌人 {gameObject.name} 全弹命中! BatchID: {batchID}"); // 调试日志
             // 存储击退信息，延迟应用
             pendingKnockbackDir = hitDir;
-            pendingKnockbackPower = hitPower;
+            pendingKnockbackPower = fullShotgunFixedKnockbackForce; // 确保使用固定击退力量
 
             // 触发慢动作
             HitFeedback.Instance?.SlowMotion(fullShotgunSlowdownFactor, fullShotgunSlowdownDuration);
@@ -329,6 +354,7 @@ public class Enemy : MonoBehaviour
     // 新增：延迟应用满喷击退的协程
     private IEnumerator ApplyFullShotgunKnockback(float delay)
     {
+        // Debug.Log($"<color=orange>Full Shotgun Knockback Applied:</color> Dir={pendingKnockbackDir.normalized}, Force={fullShotgunFixedKnockbackForce}"); // 调试日志
         // 新增：存储满喷时的原始颜色用于调试显示
         fullShotgunOriginalColor = sr.color;
 
@@ -340,8 +366,6 @@ public class Enemy : MonoBehaviour
         // 施加固定力量的击退冲量
         // 方向使用存储的 pendingKnockbackDir (已归一化)，力量使用 fullShotgunFixedKnockbackForce
         rb.AddForce(pendingKnockbackDir.normalized * fullShotgunFixedKnockbackForce, ForceMode2D.Impulse);
-
-        Debug.Log($"<color=orange>Full Shotgun Knockback Applied:</color> Dir={pendingKnockbackDir.normalized}, Force={fullShotgunFixedKnockbackForce}");
 
         // 启动普通击退流程 (处理击退停顿和阻力)
         StartKnockback();
@@ -370,5 +394,28 @@ public class Enemy : MonoBehaviour
         if (sr != null) sr.color = fullShotgunOriginalColor;
 
         // 注意：击退状态的结束和 isFullShotgunKnockedBack 标志的重置由 EndKnockback() 方法处理
+    }
+
+    // 新增：处理敌人死亡过程的方法
+    void StartDyingProcess()
+    {
+        isDying = true;
+        // 可选：改变颜色或透明度以视觉上表示死亡
+        if (sr != null)
+        {
+            sr.color = Color.grey; // 例如，变为灰色
+            // 或者 sr.color = new Color(originalColor.r, originalColor.g, originalColor.b, 0.5f); // 半透明
+        }
+
+        // 停止闪烁协程（如果正在运行）
+        if (isFlashing)
+        {
+            StopCoroutine("HitFlash"); // 假设 HitFlash 协程的名称是 "HitFlash"
+            sr.color = Color.grey; // 确保在停止闪烁后仍然是死亡颜色
+            isFlashing = false; // 重置闪烁状态
+        }
+
+        // 结束任何击退状态，确保不再进行击退逻辑
+        EndKnockback();
     }
 } 

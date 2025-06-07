@@ -3342,7 +3342,7 @@ MonoBehaviour:
   fullShotgunZoomHoldDuration: 0.3
   fullShotgunZoomMinSize: 8
   fullShotgunZoomPadding: 2
-  fullShotgunReturnSpeed: 15
+  fullShotgunReturnSpeed: 30
   collisionShakeDuration: 0.1
   collisionShakeMagnitude: 0.15
   playerHitShakeDuration: 0.3

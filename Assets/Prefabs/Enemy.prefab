@@ -127,10 +127,11 @@ MonoBehaviour:
   minEnemyImpactSpeed: 10
   enemyDamageMultiplier: 0.5
   knockbackDragMultiplier: 1
+  minVelocityForDestroy: 0.1
   fullShotgunSlowdownDuration: 0.15
-  fullShotgunSlowdownFactor: 0.3
+  fullShotgunSlowdownFactor: 0.4
   fullShotgunKnockbackDelay: 0.02
-  fullShotgunFixedKnockbackForce: 15
+  fullShotgunFixedKnockbackForce: 101.8
   fullShotgunDebugColor: {r: 0, g: 0, b: 1, a: 1}
 --- !u!212 &6185790699548729377
 SpriteRenderer:

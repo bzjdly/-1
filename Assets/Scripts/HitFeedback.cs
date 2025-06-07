@@ -90,6 +90,8 @@ public class HitFeedback : MonoBehaviour
     private Coroutine focusCoroutine;
     private Coroutine vignetteCoroutine; // 新增：用于控制泛红特效的协程
 
+    private Vector3 _currentShakeOffset = Vector3.zero; // 新增：当前震动偏移量
+
     // 是否正在聚焦中点 (现在更多是表示是否处于满喷摄像机特殊状态)
     private bool isFocusingOnMidpoint = false;
     // 中点聚焦的另一个目标（敌人）
@@ -136,36 +138,54 @@ public class HitFeedback : MonoBehaviour
         float x = Mathf.Clamp(targetPos.x, minX, maxX);
         float y = Mathf.Clamp(targetPos.y, minY, maxY);
         Vector3 desired = new Vector3(x, y, mainCam.transform.position.z);
-        mainCam.transform.position = Vector3.Lerp(mainCam.transform.position, desired, followSmooth * Time.unscaledDeltaTime);
+
+        // 应用震动偏移量
+        mainCam.transform.position = desired + _currentShakeOffset; // 将震动偏移量添加到计算出的目标位置
     }
 
     public void CameraShake(float? duration = null, float? magnitude = null)
     {
+        Debug.Log("CameraShake 方法被调用。"); // 调试日志
         if (shakeCoroutine != null)
             StopCoroutine(shakeCoroutine);
-        shakeCoroutine = StartCoroutine(DoShake(duration ?? shakeDuration, magnitude ?? shakeMagnitude));
+        shakeCoroutine = StartCoroutine(DoShakeInternal(duration ?? shakeDuration, magnitude ?? shakeMagnitude));
     }
 
-    IEnumerator DoShake(float duration, float magnitude)
+    IEnumerator DoShakeInternal(float duration, float magnitude)
     {
         float elapsed = 0f;
-        originalPos = mainCam.transform.position;
+        Vector3 startShakeOffset = _currentShakeOffset; // 记录开始时的偏移量，以防多个震动叠加
+
         while (elapsed < duration)
         {
             float offsetX = Random.Range(-1f, 1f) * magnitude;
             float offsetY = Random.Range(-1f, 1f) * magnitude;
-            mainCam.transform.position = originalPos + new Vector3(offsetX, offsetY, 0);
+            // 直接更新震动偏移量，而不是相机位置
+            _currentShakeOffset = Vector3.Lerp(startShakeOffset, new Vector3(offsetX, offsetY, 0), elapsed / duration);
+            
             elapsed += Time.unscaledDeltaTime;
             yield return null;
         }
-        mainCam.transform.position = originalPos;
+        // 震动结束，平滑过渡回零偏移
+        float smoothReturnElapsed = 0f;
+        Vector3 returnStartOffset = _currentShakeOffset;
+        float returnDuration = 0.2f; // 平滑返回时间
+
+        while (smoothReturnElapsed < returnDuration)
+        {
+            _currentShakeOffset = Vector3.Lerp(returnStartOffset, Vector3.zero, smoothReturnElapsed / returnDuration);
+            smoothReturnElapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+        _currentShakeOffset = Vector3.zero; // 确保最终为零
     }
 
     public void DirectionalShake(Vector2? dir = null, float? mainMag = null, float? sideMag = null, float? duration = null, Vector2? sideDir = null)
     {
+        Debug.Log("DirectionalShake 方法被调用。"); // 调试日志
         if (shakeCoroutine != null)
             StopCoroutine(shakeCoroutine);
-        shakeCoroutine = StartCoroutine(DoDirectionalShake(
+        shakeCoroutine = StartCoroutine(DoDirectionalShakeInternal(
             dir ?? directionalShakeDir,
             mainMag ?? directionalShakeMagnitude,
             sideMag ?? directionalShakeSideMagnitude,
@@ -174,26 +194,43 @@ public class HitFeedback : MonoBehaviour
         ));
     }
 
-    IEnumerator DoDirectionalShake(Vector2 dir, float mainMag, float sideMag, float duration, Vector2 sideDir)
+    IEnumerator DoDirectionalShakeInternal(Vector2 dir, float mainMag, float sideMag, float duration, Vector2 sideDir)
     {
         float elapsed = 0f;
-        originalPos = mainCam.transform.position;
+        Vector3 startShakeOffset = _currentShakeOffset; // 记录开始时的偏移量
+
         dir.Normalize();
         sideDir.Normalize();
+
         while (elapsed < duration)
         {
             float mainOffset = Mathf.Sin(elapsed / duration * Mathf.PI) * mainMag;
             float sideOffset = Random.Range(-1f, 1f) * sideMag;
             Vector2 offset = dir * mainOffset + sideDir * sideOffset;
-            mainCam.transform.position = originalPos + new Vector3(offset.x, offset.y, 0);
+            
+            // 直接更新震动偏移量
+            _currentShakeOffset = Vector3.Lerp(startShakeOffset, new Vector3(offset.x, offset.y, 0), elapsed / duration);
+
             elapsed += Time.unscaledDeltaTime;
             yield return null;
         }
-        mainCam.transform.position = originalPos;
+        // 震动结束，平滑过渡回零偏移
+        float smoothReturnElapsed = 0f;
+        Vector3 returnStartOffset = _currentShakeOffset;
+        float returnDuration = 0.2f; // 平滑返回时间
+
+        while (smoothReturnElapsed < returnDuration)
+        {
+            _currentShakeOffset = Vector3.Lerp(returnStartOffset, Vector3.zero, smoothReturnElapsed / returnDuration);
+            smoothReturnElapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+        _currentShakeOffset = Vector3.zero; // 确保最终为零
     }
 
     public void CameraZoom(float target, float speed)
     {
+        Debug.Log($"CameraZoom 方法被调用，目标大小: {target}, 速度: {speed}。"); // 调试日志
         if (zoomCoroutine != null)
             StopCoroutine(zoomCoroutine);
         // 使用不受时间缩放影响的插值速度
@@ -213,11 +250,13 @@ public class HitFeedback : MonoBehaviour
 
     public void ResetZoom()
     {
+        Debug.Log("ResetZoom 方法被调用。"); // 调试日志
         CameraZoom(originalSize, zoomSpeed);
     }
 
     public void SlowMotion(float? scale = null, float? duration = null)
     {
+        Debug.Log($"SlowMotion 方法被调用，时间缩放: {scale}, 持续时间: {duration}。"); // 调试日志
         StartCoroutine(DoSlowMotion(scale ?? slowTimeScale, duration ?? slowDuration));
     }
 
@@ -395,6 +434,7 @@ public class HitFeedback : MonoBehaviour
     // 新增：触发玩家受击反馈（震动和屏幕泛红）
     public void TriggerPlayerHitFeedback()
     {
+        Debug.Log("TriggerPlayerHitFeedback 方法被调用。"); // 调试日志
         CameraShake(playerHitShakeDuration, playerHitShakeMagnitude); // 触发震动
         if (playerHitVignetteImage != null)
         {

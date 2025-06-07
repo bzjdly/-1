@@ -29,10 +29,7 @@ public class EnemySpawner : MonoBehaviour
         nextSpawnCheckTime = Time.time + spawnCheckInterval;
         // 获取场景中的 EnemyManager 引用
         enemyManager = FindObjectOfType<EnemyManager>();
-        if (enemyManager == null)
-        {
-            Debug.LogError("场景中找不到 EnemyManager 脚本，敌人将无法追踪玩家！");
-        }
+
     }
 
     void Update()
@@ -92,7 +89,5 @@ public class EnemySpawner : MonoBehaviour
             // 从可用列表中移除已使用的生成点，确保同一组不重复使用生成点
             availableSpawnPoints.RemoveAt(randomIndex);
         }
-
-        Debug.Log($"生成了 {enemiesToSpawn} 个敌人。当前场上敌人总数：{FindObjectsOfType<Enemy>().Length}");
     }
 } 
