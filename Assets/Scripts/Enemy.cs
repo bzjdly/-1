@@ -55,6 +55,16 @@ public class Enemy : MonoBehaviour
     [Tooltip("击退期间线性阻力的倍率（越大衰减越快）")]
     public float knockbackDragMultiplier = 5f;
 
+    [Header("满喷打击反馈")]
+    [Tooltip("满喷时慢动作持续时间")]
+    public float fullShotgunSlowdownDuration = 0.15f;
+    [Tooltip("满喷时慢动作因子 (1.0为正常速度)")]
+    public float fullShotgunSlowdownFactor = 0.3f;
+    [Tooltip("满喷时应用击退前的延迟（秒，在慢动作开始后计算）")]
+    public float fullShotgunKnockbackDelay = 0.02f;
+    [Tooltip("满喷时临时增加的击退倍率")]
+    public float fullShotgunTempKnockbackMultiplier = 1.5f;
+
     private Rigidbody2D rb;
     private SpriteRenderer sr;
     private Color originalColor;
@@ -64,6 +74,9 @@ public class Enemy : MonoBehaviour
 
     // 新增：用于追踪子弹批次击中次数
     private Dictionary<int, int> bulletBatchHits = new Dictionary<int, int>();
+    // 新增：用于存储满喷时的击退信息
+    private Vector2 pendingKnockbackDir;
+    private float pendingKnockbackPower;
 
     void Awake()
     {
@@ -241,8 +254,8 @@ public class Enemy : MonoBehaviour
         rb.drag = originalDrag;
     }
 
-    // 新增：处理来自子弹的批量击中信息
-    public void OnBulletHitBatch(int batchID, int totalBulletsInBatch)
+    // 新增：处理来自子弹的批量击中信息 (添加 hitDir 和 hitPower 参数)
+    public void OnBulletHitBatch(int batchID, int totalBulletsInBatch, Vector2 hitDir, float hitPower)
     {
         // 增加对应批次的击中计数
         if (!bulletBatchHits.ContainsKey(batchID))
@@ -253,33 +266,51 @@ public class Enemy : MonoBehaviour
 
         Debug.Log($"{gameObject.name} 收到批次 {batchID} 的子弹击中，当前计数: {bulletBatchHits[batchID]}/{totalBulletsInBatch}");
 
-        // 检查是否达到总子弹数量，并且该批次还没有触发过时间停顿
-        if (bulletBatchHits[batchID] >= totalBulletsInBatch)
+        // 检查是否达到全弹命中
+        if (bulletBatchHits[batchID] == totalBulletsInBatch)
         {
-            Debug.Log($"{gameObject.name} 收到批次 {batchID} 全弹命中！触发时间停顿。");
-            // 触发时间停顿
-            if (HitFeedback.Instance != null)
-            {
-                // 可以在这里调整时间停顿的参数
-                // HitFeedback.Instance.SlowMotion(0.15f, 0.1f); // 原来的直接调用
+            Debug.Log($"敌人 {gameObject.name} 全弹命中! BatchID: {batchID}");
 
-                // 启动协程延迟时间停顿，防止吞掉击退
-                StartCoroutine(DelayedSlowMotion(0.02f, 0.15f, 0.1f)); // 延迟 0.02 秒，然后减速到 0.1 倍速，持续 0.15 秒
-            }
+            // 存储击退信息，延迟应用
+            pendingKnockbackDir = hitDir;
+            pendingKnockbackPower = hitPower;
 
-            // 移除该批次的记录，避免重复触发
-            bulletBatchHits.Remove(batchID);
+            // 触发慢动作
+            HitFeedback.Instance?.SlowMotion(fullShotgunSlowdownDuration, fullShotgunSlowdownFactor);
+
+            // 新增：触发摄像机聚焦到玩家和该敌人的中点
+            HitFeedback.Instance?.FocusOnTargetMidpoint(transform);
+
+            // 启动协程延迟应用击退
+            StartCoroutine(ApplyFullShotgunKnockback(fullShotgunKnockbackDelay));
+
+            // 可选：清理该批次的记录，避免重复触发
+            // bulletBatchHits.Remove(batchID);
         }
     }
 
-    // 新增：延迟触发时间停顿的协程
-    private IEnumerator DelayedSlowMotion(float delay, float slowdownDuration, float slowdownFactor)
+    // 新增：延迟应用满喷击退的协程
+    private IEnumerator ApplyFullShotgunKnockback(float delay)
     {
-        yield return new WaitForSeconds(delay); // 等待指定的延迟时间
+        // 等待设定的延迟时间
+        yield return new WaitForSeconds(delay);
 
-        if (HitFeedback.Instance != null)
+        // 临时提高击退倍率
+        float originalMultiplier = knockbackMultiplier;
+        knockbackMultiplier *= fullShotgunTempKnockbackMultiplier;
+
+        // 应用存储的击退力量
+        // 注意：这里直接施加力量，不再调用 OnHit，因为 OnHit 会再次触发击中逻辑，导致循环或重复效果
+        if (pendingKnockbackDir != Vector2.zero)
         {
-            HitFeedback.Instance.SlowMotion(slowdownDuration, slowdownFactor);
+            rb.AddForce(pendingKnockbackDir * pendingKnockbackPower * knockbackMultiplier, ForceMode2D.Impulse);
+            StartKnockback(); // 启动击退状态
         }
+
+        // 恢复击退倍率
+        knockbackMultiplier = originalMultiplier;
+
+        // 在这里添加调用 HitFeedback 调整摄像机的逻辑 (稍后实现)
+        // 例如: HitFeedback.Instance?.FocusCameraOnPlayerAndTarget(player, transform);
     }
 } 

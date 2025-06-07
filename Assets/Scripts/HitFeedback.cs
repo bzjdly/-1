@@ -54,6 +54,11 @@ public class HitFeedback : MonoBehaviour
     private Vector3 originalPos;
     private Coroutine shakeCoroutine;
     private Coroutine zoomCoroutine;
+    private Coroutine focusCoroutine;
+
+    private bool isFocusingOnMidpoint = false;
+    private Transform midpointFocusTarget;
+    private Vector3 originalFollowPos;
 
     void Awake()
     {
@@ -68,10 +73,12 @@ public class HitFeedback : MonoBehaviour
 
     void LateUpdate()
     {
-        CameraFollowWithBounds();
+        if (!isFocusingOnMidpoint)
+        {
+            CameraFollowWithBounds();
+        }
     }
 
-    // 摄像机跟随玩家并限制在世界边界内
     void CameraFollowWithBounds()
     {
         if (followTarget == null || mainCam == null) return;
@@ -88,7 +95,6 @@ public class HitFeedback : MonoBehaviour
         mainCam.transform.position = Vector3.Lerp(mainCam.transform.position, desired, followSmooth * Time.unscaledDeltaTime);
     }
 
-    // 摄像机震动
     public void CameraShake(float? duration = null, float? magnitude = null)
     {
         if (shakeCoroutine != null)
@@ -108,11 +114,9 @@ public class HitFeedback : MonoBehaviour
             elapsed += Time.unscaledDeltaTime;
             yield return null;
         }
-        // 强制回到原始位置
         mainCam.transform.position = originalPos;
     }
 
-    // 方向震动
     public void DirectionalShake(Vector2? dir = null, float? mainMag = null, float? sideMag = null, float? duration = null, Vector2? sideDir = null)
     {
         if (shakeCoroutine != null)
@@ -141,11 +145,9 @@ public class HitFeedback : MonoBehaviour
             elapsed += Time.unscaledDeltaTime;
             yield return null;
         }
-        // 强制回到原始位置
         mainCam.transform.position = originalPos;
     }
 
-    // 摄像机缩放
     public void CameraZoom(float target, float speed)
     {
         if (zoomCoroutine != null)
@@ -163,13 +165,11 @@ public class HitFeedback : MonoBehaviour
         mainCam.orthographicSize = target;
     }
 
-    // 恢复摄像机缩放
     public void ResetZoom()
     {
         CameraZoom(originalSize, zoomSpeed);
     }
 
-    // 游戏慢动作
     public void SlowMotion(float? scale = null, float? duration = null)
     {
         StartCoroutine(DoSlowMotion(scale ?? slowTimeScale, duration ?? slowDuration));
@@ -180,5 +180,59 @@ public class HitFeedback : MonoBehaviour
         Time.timeScale = scale;
         yield return new WaitForSecondsRealtime(duration);
         Time.timeScale = 1f;
+    }
+
+    public void FocusOnTargetMidpoint(Transform target)
+    {
+        if (followTarget == null || target == null || mainCam == null) return;
+        if (focusCoroutine != null) StopCoroutine(focusCoroutine);
+
+        midpointFocusTarget = target;
+        isFocusingOnMidpoint = true;
+        originalFollowPos = mainCam.transform.position;
+
+        focusCoroutine = StartCoroutine(DoFocusOnMidpoint(target));
+    }
+
+    private IEnumerator DoFocusOnMidpoint(Transform target)
+    {
+        float transitionDuration = 0.5f;
+        float focusHoldDuration = 0.3f;
+        float elapsed = 0f;
+
+        Vector3 startPos = mainCam.transform.position;
+
+        while (elapsed < transitionDuration)
+        {
+            Vector3 midpointTargetPos = Vector3.Lerp(followTarget.position, target.position, 0.5f);
+
+            mainCam.transform.position = Vector3.Lerp(startPos, new Vector3(midpointTargetPos.x, midpointTargetPos.y, mainCam.transform.position.z), elapsed / transitionDuration);
+
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        Vector3 finalMidpointPos = Vector3.Lerp(followTarget.position, target.position, 0.5f);
+        mainCam.transform.position = new Vector3(finalMidpointPos.x, finalMidpointPos.y, mainCam.transform.position.z);
+
+        yield return new WaitForSeconds(focusHoldDuration);
+
+        elapsed = 0f;
+        startPos = mainCam.transform.position;
+        Vector3 returnTargetPos = originalFollowPos;
+
+        while (elapsed < transitionDuration)
+        {
+            mainCam.transform.position = Vector3.Lerp(startPos, returnTargetPos, elapsed / transitionDuration);
+
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        mainCam.transform.position = new Vector3(returnTargetPos.x, returnTargetPos.y, mainCam.transform.position.z);
+
+        isFocusingOnMidpoint = false;
+        midpointFocusTarget = null;
+        focusCoroutine = null;
     }
 } 

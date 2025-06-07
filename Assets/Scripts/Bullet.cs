@@ -59,7 +59,7 @@ public class Bullet : MonoBehaviour
                     enemy.OnHit(knockDir, knockPower, 1);
 
                     // 调用敌人的新方法处理批量击中逻辑
-                    enemy.OnBulletHitBatch(shootBatchID, totalBulletsInBatch);
+                    enemy.OnBulletHitBatch(shootBatchID, totalBulletsInBatch, knockDir, knockPower);
                 }
                 // 这里可扩展造成伤害等逻辑
             }
