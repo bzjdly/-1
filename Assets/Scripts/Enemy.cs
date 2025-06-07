@@ -92,8 +92,27 @@ public class Enemy : MonoBehaviour
             return;
         }
 
-        Vector2 dir = (player.position - transform.position).normalized;
-        rb.velocity = dir * moveSpeed;
+        // 使用流场寻路移动
+        if (EnemyManager.Instance != null)
+        {
+            Vector2 flowDirection = EnemyManager.Instance.GetDirectionToPlayer(transform.position);
+            // 如果获取到有效的流场方向，则沿着该方向移动
+            if (flowDirection != Vector2.zero)
+            {
+                rb.velocity = flowDirection.normalized * moveSpeed;
+            } else
+            {
+                // 如果流场方向为零 (例如在障碍物内或无法到达玩家)，停止移动或保持当前速度
+                // 这里简单设置为零，可以根据需要调整
+                rb.velocity = Vector2.zero;
+            }
+        } else
+        {
+            // 如果 EnemyManager 实例不存在，则保持原有朝向玩家的移动逻辑作为备用或错误提示
+            Debug.LogWarning("场景中没有 EnemyManager 实例，敌人将使用旧的追踪逻辑！");
+            Vector2 dir = (player.position - transform.position).normalized;
+            rb.velocity = dir * moveSpeed;
+        }
     }
 
     public void OnHit(Vector2 hitDir, float hitPower, int damage = 1)
