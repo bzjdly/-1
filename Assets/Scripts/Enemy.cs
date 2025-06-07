@@ -65,6 +65,10 @@ public class Enemy : MonoBehaviour
     [Tooltip("满喷时临时增加的击退倍率")]
     public float fullShotgunTempKnockbackMultiplier = 1.5f;
 
+    [Header("调试设置")]
+    [Tooltip("满喷命中时敌人显示的颜色")]
+    public Color fullShotgunDebugColor = Color.blue;
+
     private Rigidbody2D rb;
     private SpriteRenderer sr;
     private Color originalColor;
@@ -77,6 +81,8 @@ public class Enemy : MonoBehaviour
     // 新增：用于存储满喷时的击退信息
     private Vector2 pendingKnockbackDir;
     private float pendingKnockbackPower;
+    // 新增：用于存储满喷时的原始颜色，以便恢复
+    private Color fullShotgunOriginalColor;
 
     void Awake()
     {
@@ -92,8 +98,6 @@ public class Enemy : MonoBehaviour
     {
         if (player == null)
             return;
-
-        Debug.Log($"[{name}] 速度={rb.velocity.magnitude:F2}, 击退中={isKnockedBack}");
 
         if (isKnockedBack)
         {
@@ -252,6 +256,8 @@ public class Enemy : MonoBehaviour
         isKnockedBack = false;
         hitStopTimer = 0f;
         rb.drag = originalDrag;
+        // 新增：输出结束击退状态信息
+        Debug.Log($"[{gameObject.name}] 结束击退状态。");
     }
 
     // 新增：处理来自子弹的批量击中信息 (添加 hitDir 和 hitPower 参数)
@@ -278,8 +284,15 @@ public class Enemy : MonoBehaviour
             // 触发慢动作
             HitFeedback.Instance?.SlowMotion(fullShotgunSlowdownDuration, fullShotgunSlowdownFactor);
 
-            // 新增：触发摄像机聚焦到玩家和该敌人的中点
+            // 触发摄像机聚焦到玩家和该敌人的中点
             HitFeedback.Instance?.FocusOnTargetMidpoint(transform);
+
+            // 新增：满喷命中时临时变色
+            if (sr != null)
+            {
+                 fullShotgunOriginalColor = sr.color; // 存储原始颜色
+                 sr.color = fullShotgunDebugColor;
+            }
 
             // 启动协程延迟应用击退
             StartCoroutine(ApplyFullShotgunKnockback(fullShotgunKnockbackDelay));
@@ -305,6 +318,9 @@ public class Enemy : MonoBehaviour
         {
             rb.AddForce(pendingKnockbackDir * pendingKnockbackPower * knockbackMultiplier, ForceMode2D.Impulse);
             StartKnockback(); // 启动击退状态
+
+            // 新增：输出击退信息和当前速度
+            Debug.Log($"[{gameObject.name}] 延迟应用击退 -> 方向: {pendingKnockbackDir.normalized:F2}, 力量: {pendingKnockbackPower * knockbackMultiplier:F2}, 当前速度: {rb.velocity.magnitude:F2}");
         }
 
         // 恢复击退倍率
@@ -312,5 +328,11 @@ public class Enemy : MonoBehaviour
 
         // 在这里添加调用 HitFeedback 调整摄像机的逻辑 (稍后实现)
         // 例如: HitFeedback.Instance?.FocusCameraOnPlayerAndTarget(player, transform);
+
+        // 新增：恢复颜色
+        if (sr != null)
+        {
+            sr.color = fullShotgunOriginalColor;
+        }
     }
 } 
