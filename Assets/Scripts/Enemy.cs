@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic; // 需要使用 Dictionary
 
 public class Enemy : MonoBehaviour
 {
@@ -60,6 +61,9 @@ public class Enemy : MonoBehaviour
     private bool isFlashing = false;
     private bool isKnockedBack = false;
     private float originalDrag;
+
+    // 新增：用于追踪子弹批次击中次数
+    private Dictionary<int, int> bulletBatchHits = new Dictionary<int, int>();
 
     void Awake()
     {
@@ -235,5 +239,33 @@ public class Enemy : MonoBehaviour
         isKnockedBack = false;
         hitStopTimer = 0f;
         rb.drag = originalDrag;
+    }
+
+    // 新增：处理来自子弹的批量击中信息
+    public void OnBulletHitBatch(int batchID, int totalBulletsInBatch)
+    {
+        // 增加对应批次的击中计数
+        if (!bulletBatchHits.ContainsKey(batchID))
+        {
+            bulletBatchHits[batchID] = 0;
+        }
+        bulletBatchHits[batchID]++;
+
+        Debug.Log($"{gameObject.name} 收到批次 {batchID} 的子弹击中，当前计数: {bulletBatchHits[batchID]}/{totalBulletsInBatch}");
+
+        // 检查是否达到总子弹数量，并且该批次还没有触发过时间停顿
+        if (bulletBatchHits[batchID] >= totalBulletsInBatch)
+        {
+            Debug.Log($"{gameObject.name} 收到批次 {batchID} 全弹命中！触发时间停顿。");
+            // 触发时间停顿
+            if (HitFeedback.Instance != null)
+            {
+                // 可以在这里调整时间停顿的参数
+                HitFeedback.Instance.SlowMotion(0.15f, 0.1f); // 0.15秒减速到 0.1 倍速
+            }
+
+            // 移除该批次的记录，避免重复触发
+            bulletBatchHits.Remove(batchID);
+        }
     }
 } 

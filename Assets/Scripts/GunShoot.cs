@@ -24,6 +24,7 @@ public class GunShoot : MonoBehaviour
     public Transform firePoint;
 
     private float fireTimer = 0f;
+    private static int shootBatchCounter = 0; // 用于生成唯一的批量ID
 
     void Update()
     {
@@ -47,22 +48,39 @@ public class GunShoot : MonoBehaviour
         {
             yield break;
         }
+
+        shootBatchCounter++; // 为本次射击生成一个新的批量ID
+        int currentBatchID = shootBatchCounter;
+        int totalBulletsInBatch = bulletCount; // 本批次总子弹数量
+
         float startAngle = -spreadAngle * 0.5f;
-        float angleStep = bulletCount > 1 ? spreadAngle / (bulletCount - 1) : 0f;
-        float interval = bulletCount > 1 ? spreadDuration / (bulletCount - 1) : 0f;
-        for (int i = 0; i < bulletCount; i++)
+        float angleStep = totalBulletsInBatch > 1 ? spreadAngle / (totalBulletsInBatch - 1) : 0f;
+        float interval = totalBulletsInBatch > 1 ? spreadDuration / (totalBulletsInBatch - 1) : 0f;
+
+        for (int i = 0; i < totalBulletsInBatch; i++)
         {
             float angleOffset = startAngle + angleStep * i;
             Quaternion rot = firePoint.rotation * Quaternion.Euler(0, 0, angleOffset);
-            GameObject bullet = Instantiate(bulletPrefab, firePoint.position, rot);
-            Rigidbody2D rb = bullet.GetComponent<Rigidbody2D>();
+            GameObject bulletGO = Instantiate(bulletPrefab, firePoint.position, rot); // 修改变量名方便获取组件
+            
+            // 获取 Bullet 组件并设置批量ID和总子弹数量
+            Bullet bullet = bulletGO.GetComponent<Bullet>();
+            if (bullet != null)
+            {
+                bullet.SetShootBatchInfo(currentBatchID, totalBulletsInBatch);
+            } else
+            {
+                Debug.LogWarning($"子弹预制体 \"{bulletPrefab.name}\" 没有挂载 Bullet 脚本！");
+            }
+
+            Rigidbody2D rb = bulletGO.GetComponent<Rigidbody2D>(); // 使用新的变量名
             if (rb != null)
             {
                 float speedOffset = Random.Range(-speedVariance, speedVariance);
                 Vector2 velocity = rot * Vector2.right * (bulletSpeed + speedOffset);
                 rb.velocity = velocity;
             }
-            if (i < bulletCount - 1)
+            if (i < totalBulletsInBatch - 1)
                 yield return new WaitForSeconds(interval);
         }
     }

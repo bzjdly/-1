@@ -16,6 +16,9 @@ public class Bullet : MonoBehaviour
     private Rigidbody2D rb;
     private float timer;
 
+    private int shootBatchID; // 新增：射击批量ID
+    private int totalBulletsInBatch; // 新增：当前批次总子弹数量
+
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -54,11 +57,21 @@ public class Bullet : MonoBehaviour
                     Vector2 knockDir = rb.velocity.normalized;
                     float knockPower = speed * knockbackBase;
                     enemy.OnHit(knockDir, knockPower, 1);
+
+                    // 调用敌人的新方法处理批量击中逻辑
+                    enemy.OnBulletHitBatch(shootBatchID, totalBulletsInBatch);
                 }
                 // 这里可扩展造成伤害等逻辑
             }
             // 子弹击中敌人后销毁
             Destroy(gameObject);
         }
+    }
+
+    // 新增：设置射击批量信息
+    public void SetShootBatchInfo(int batchID, int totalCount)
+    {
+        shootBatchID = batchID;
+        totalBulletsInBatch = totalCount;
     }
 } 
