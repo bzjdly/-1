@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 4609201735854894642}
   - component: {fileID: 6185790699548729377}
   m_Layer: 0
-  m_Name: Enemy
+  m_Name: Heavy Enemy
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -109,16 +109,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 933b590f04c51f8469a75211558a895f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 3
-  knockbackForce: 1
+  moveSpeed: 1
+  knockbackForce: 15
   playerDamage: 1
+  isHeavyEnemy: 1
+  isSlimeDetonator: 0
+  heavyCollisionDamageMultiplier: 5
+  explosionPrefab: {fileID: 0}
+  explosionRadius: 2
+  explosionDamage: 1
   player: {fileID: 0}
   hitFlashTime: 0.08
   hitColor: {r: 1, g: 0, b: 0, a: 1}
   hitParticlePrefab: {fileID: 7536501802246876266, guid: 14f83f6b0a6755545bde35b931838099, type: 3}
   hitParticleSpeed: 4
   hitParticleCount: 8
-  maxHP: 10
+  maxHP: 20
   currentHP: 0
   hitStopTime: 0.18
   knockbackMultiplier: 0.01
@@ -130,7 +136,7 @@ MonoBehaviour:
   fullShotgunSlowdownDuration: 0.15
   fullShotgunSlowdownFactor: 0.3
   fullShotgunKnockbackDelay: 0.02
-  fullShotgunFixedKnockbackForce: 15
+  fullShotgunFixedKnockbackForce: 60
   fullShotgunDebugColor: {r: 0, g: 0, b: 1, a: 1}
 --- !u!212 &6185790699548729377
 SpriteRenderer:
@@ -173,7 +179,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -5177388603050735206, guid: 8884154dfe85442a3a3578be807dbcdf, type: 3}
+  m_Sprite: {fileID: -2135585597343286014, guid: 5aa8b770bc43046bc8d993d0d5b7f4a5, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
