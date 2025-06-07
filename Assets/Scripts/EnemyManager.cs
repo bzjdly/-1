@@ -188,8 +188,6 @@ public class EnemyManager : MonoBehaviour
             }
             flowField[currentTile] = bestDirection;
         }
-
-        Debug.Log("流场计算完成。");
     }
 
     public Vector2 GetDirectionToPlayer(Vector3 worldPosition)
