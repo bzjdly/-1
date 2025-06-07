@@ -103,13 +103,18 @@ public class GunShoot : MonoBehaviour
         isZooming = true;
         if (HitFeedback.Instance != null)
         {
+            // 拉近屏幕
             HitFeedback.Instance.CameraZoom(shootZoomSize, shootZoomDuration);
 
+            // 等待缩放持续时间
             yield return new WaitForSeconds(shootZoomDuration);
 
-            HitFeedback.Instance.ResetZoom(shootZoomResetDuration);
+            // 恢复屏幕大小
+            HitFeedback.Instance.ResetZoom();
         }
-        yield return new WaitForSeconds(shootZoomResetDuration);
+        // 等待恢复完成（或者更短的时间，避免缩放效果叠加）
+        // 这里等待缩放持续时间和恢复持续时间的总和，确保下一次缩放不会太快触发
+        yield return new WaitForSeconds(shootZoomDuration + shootZoomResetDuration); // 等待缩放和恢复动画完成
         isZooming = false;
     }
 } 
