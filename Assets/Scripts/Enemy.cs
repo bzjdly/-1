@@ -261,11 +261,25 @@ public class Enemy : MonoBehaviour
             if (HitFeedback.Instance != null)
             {
                 // 可以在这里调整时间停顿的参数
-                HitFeedback.Instance.SlowMotion(0.15f, 0.1f); // 0.15秒减速到 0.1 倍速
+                // HitFeedback.Instance.SlowMotion(0.15f, 0.1f); // 原来的直接调用
+
+                // 启动协程延迟时间停顿，防止吞掉击退
+                StartCoroutine(DelayedSlowMotion(0.02f, 0.15f, 0.1f)); // 延迟 0.02 秒，然后减速到 0.1 倍速，持续 0.15 秒
             }
 
             // 移除该批次的记录，避免重复触发
             bulletBatchHits.Remove(batchID);
+        }
+    }
+
+    // 新增：延迟触发时间停顿的协程
+    private IEnumerator DelayedSlowMotion(float delay, float slowdownDuration, float slowdownFactor)
+    {
+        yield return new WaitForSeconds(delay); // 等待指定的延迟时间
+
+        if (HitFeedback.Instance != null)
+        {
+            HitFeedback.Instance.SlowMotion(slowdownDuration, slowdownFactor);
         }
     }
 } 
