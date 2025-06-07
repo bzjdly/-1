@@ -99,7 +99,9 @@ public class Enemy : MonoBehaviour
             // 如果获取到有效的流场方向，则沿着该方向移动
             if (flowDirection != Vector2.zero)
             {
-                rb.velocity = flowDirection.normalized * moveSpeed;
+                // 使用平滑插值更新速度，减少在墙角处卡顿的可能性
+                Vector2 targetVelocity = flowDirection.normalized * moveSpeed;
+                rb.velocity = Vector2.Lerp(rb.velocity, targetVelocity, Time.fixedDeltaTime * 10f); // 10f 为插值速度，可调整
             } else
             {
                 // 如果流场方向为零 (例如在障碍物内或无法到达玩家)，停止移动或保持当前速度

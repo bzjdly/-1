@@ -121,9 +121,9 @@ MonoBehaviour:
   currentHP: 0
   hitStopTime: 0.18
   knockbackMultiplier: 0.01
-  minWallImpactSpeed: 5
+  minWallImpactSpeed: 10
   wallDamageMultiplier: 0.1
-  minEnemyImpactSpeed: 4
+  minEnemyImpactSpeed: 10
   enemyDamageMultiplier: 0.5
   knockbackDragMultiplier: 1
 --- !u!212 &6185790699548729377

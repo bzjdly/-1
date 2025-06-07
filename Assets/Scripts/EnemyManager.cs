@@ -180,7 +180,8 @@ public class EnemyManager : MonoBehaviour
                     if (neighborDistance < minDistance)
                     {
                         minDistance = neighborDistance;
-                        bestDirection = -direction.normalized;
+                        Vector2 dirV2 = new Vector2(direction.x, direction.y);
+                        bestDirection = dirV2.normalized;
                     } else if (neighborDistance == minDistance) {
                     }
                 }
