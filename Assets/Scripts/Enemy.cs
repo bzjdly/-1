@@ -9,6 +9,8 @@ public class Enemy : MonoBehaviour
     public float moveSpeed = 3f;
     [Tooltip("击退力度（基础值）")]
     public float knockbackForce = 8f;
+    [Tooltip("对玩家造成的伤害")]
+    public int playerDamage = 1; // 新增：对玩家造成的伤害值
 
     [Header("玩家引用")]
     [Tooltip("玩家Transform，由EnemyManager自动赋值")]
@@ -244,16 +246,24 @@ public class Enemy : MonoBehaviour
 
         if (collision.gameObject.CompareTag("Player"))
         {
+            // 检查玩家是否已死亡，避免重复伤害
+            if (PlayerMovement.Instance != null && PlayerMovement.Instance.currentHP <= 0)
+            {
+                return;
+            }
+
             Rigidbody2D playerRb = collision.gameObject.GetComponent<Rigidbody2D>();
             if (playerRb != null)
             {
                 Vector2 knockDir = (collision.transform.position - transform.position).normalized;
+                // 对玩家造成伤害
+                if (PlayerMovement.Instance != null)
+                {
+                    PlayerMovement.Instance.TakeDamage(playerDamage);
+                }
+
+                // 对玩家施加击退，力量由敌人的 knockbackForce 决定
                 playerRb.AddForce(knockDir * knockbackForce, ForceMode2D.Impulse);
-            }
-            var player = collision.gameObject.GetComponent<PlayerMovement>();
-            if (player != null)
-            {
-                player.OnHit(1);
             }
         }
     }
@@ -298,7 +308,7 @@ public class Enemy : MonoBehaviour
             // 触发慢动作
             HitFeedback.Instance?.SlowMotion(fullShotgunSlowdownFactor, fullShotgunSlowdownDuration);
 
-            // 触发摄像机拉远聚焦 (如果 HitFeedback 存在)
+            // 触发摄像机聚焦到玩家和该敌人的中点
             HitFeedback.Instance?.TriggerFullShotgunCameraEffect(transform);
 
             // 新增：满喷命中时临时变色

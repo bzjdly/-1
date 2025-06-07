@@ -2,12 +2,17 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    [Header("Movement Settings")]
+    public static PlayerMovement Instance { get; private set; } // 单例模式
+
+    [Header("移动设置")]
     [SerializeField]
+    [Tooltip("移动速度")]
     private float moveSpeed = 5f;
     [SerializeField]
+    [Tooltip("加速度")]
     private float acceleration = 20f; // 加速度
     [SerializeField]
+    [Tooltip("减速度")]
     private float deceleration = 30f; // 减速度
 
     [Header("血量设置")]
@@ -21,6 +26,15 @@ public class PlayerMovement : MonoBehaviour
 
     void Awake()
     {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+
         rb = GetComponent<Rigidbody2D>();
         currentHP = maxHP;
     }
@@ -63,12 +77,30 @@ public class PlayerMovement : MonoBehaviour
         rb.velocity = Vector2.ClampMagnitude(rb.velocity, moveSpeed);
     }
 
-    public void OnHit(int damage = 1)
+    public void TakeDamage(int damageAmount)
     {
-        currentHP -= damage;
+        if (currentHP <= 0) return; // 避免重复伤害已死亡的玩家
+
+        currentHP -= damageAmount;
+        Debug.Log($"玩家受到 {damageAmount} 点伤害，当前血量：{currentHP}");
+
         if (currentHP <= 0)
         {
-            Debug.Log("玩家死亡");
+            currentHP = 0;
+            Debug.Log("玩家死亡！");
+            // TODO: 在这里添加玩家死亡后的游戏逻辑，例如播放死亡动画、重新开始游戏等
         }
+    }
+
+    public void Heal(int healAmount)
+    {
+        if (currentHP >= maxHP) return; // 避免超过最大血量
+
+        currentHP += healAmount;
+        if (currentHP > maxHP)
+        {
+            currentHP = maxHP;
+        }
+        Debug.Log($"玩家恢复 {healAmount} 点血量，当前血量：{currentHP}");
     }
 } 
