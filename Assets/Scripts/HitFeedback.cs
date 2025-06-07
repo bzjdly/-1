@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.UI; // 新增引用
 
 public class HitFeedback : MonoBehaviour
 {
@@ -59,7 +60,7 @@ public class HitFeedback : MonoBehaviour
     [Tooltip("满喷时摄像机拉远，基于玩家和敌人距离的额外视野填充")]
     public float fullShotgunZoomPadding = 2f;
     [Tooltip("满喷摄像机目标丢失后快速返回玩家的速度")]
-    public float fullShotgunReturnSpeed = 15f; // 新增：返回速度参数
+    public float fullShotgunReturnSpeed = 15f;
 
     [Header("满喷击退碰撞震动设置")]
     [Tooltip("满喷击退敌人撞墙/人震动持续时间（秒）")]
@@ -67,12 +68,27 @@ public class HitFeedback : MonoBehaviour
     [Tooltip("满喷击退敌人撞墙/人震动强度")]
     public float collisionShakeMagnitude = 0.15f;
 
+    [Header("玩家受击反馈")] // 新增：玩家受击反馈分组
+    [Tooltip("玩家受击时摄像机震动持续时间（秒）")]
+    public float playerHitShakeDuration = 0.3f;
+    [Tooltip("玩家受击时摄像机震动强度")]
+    public float playerHitShakeMagnitude = 0.3f;
+    [Tooltip("屏幕边缘泛红Image引用（需手动创建并设置为全屏）")]
+    public Image playerHitVignetteImage;
+    [Tooltip("屏幕边缘泛红颜色")]
+    public Color playerHitVignetteColor = new Color(1f, 0f, 0f, 0.5f); // 默认红色，半透明
+    [Tooltip("屏幕边缘泛红淡入时间（秒）")]
+    public float playerHitVignetteFadeInDuration = 0.1f;
+    [Tooltip("屏幕边缘泛红淡出时间（秒）")]
+    public float playerHitVignetteFadeOutDuration = 0.5f;
+
     private Camera mainCam;
     private float originalSize;
     private Vector3 originalPos;
     private Coroutine shakeCoroutine;
     private Coroutine zoomCoroutine;
     private Coroutine focusCoroutine;
+    private Coroutine vignetteCoroutine; // 新增：用于控制泛红特效的协程
 
     // 是否正在聚焦中点 (现在更多是表示是否处于满喷摄像机特殊状态)
     private bool isFocusingOnMidpoint = false;
@@ -80,7 +96,7 @@ public class HitFeedback : MonoBehaviour
     private Transform midpointFocusTarget;
     // 聚焦前的原始跟随位置
     private Vector3 originalFollowPos;
-    private float originalOrthographicSize; // 新增：存储聚焦前的原始相机大小
+    private float originalOrthographicSize;
 
     void Awake()
     {
@@ -91,6 +107,12 @@ public class HitFeedback : MonoBehaviour
         mainCam = Camera.main;
         if (mainCam != null)
             originalSize = mainCam.orthographicSize;
+
+        // 初始化屏幕边缘泛红Image为透明
+        if (playerHitVignetteImage != null)
+        {
+            playerHitVignetteImage.color = Color.clear;
+        }
     }
 
     void LateUpdate()
@@ -368,5 +390,48 @@ public class HitFeedback : MonoBehaviour
         float x = Mathf.Clamp(position.x, minX, maxX);
         float y = Mathf.Clamp(position.y, minY, maxY);
         return new Vector3(x, y, position.z);
+    }
+
+    // 新增：触发玩家受击反馈（震动和屏幕泛红）
+    public void TriggerPlayerHitFeedback()
+    {
+        CameraShake(playerHitShakeDuration, playerHitShakeMagnitude); // 触发震动
+        if (playerHitVignetteImage != null)
+        {
+            if (vignetteCoroutine != null)
+            {
+                StopCoroutine(vignetteCoroutine);
+            }
+            vignetteCoroutine = StartCoroutine(DoPlayerHitVignette()); // 触发泛红特效
+        }
+    }
+
+    // 新增：处理屏幕边缘泛红效果的协程
+    private IEnumerator DoPlayerHitVignette()
+    {
+        Color startColor = playerHitVignetteImage.color;
+        Color targetColor = playerHitVignetteColor;
+
+        // 淡入
+        float elapsed = 0f;
+        while (elapsed < playerHitVignetteFadeInDuration)
+        {
+            playerHitVignetteImage.color = Color.Lerp(startColor, targetColor, elapsed / playerHitVignetteFadeInDuration);
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+        playerHitVignetteImage.color = targetColor; // 确保完全淡入
+
+        // 淡出
+        elapsed = 0f;
+        startColor = playerHitVignetteImage.color; // 从当前颜色开始淡出
+        while (elapsed < playerHitVignetteFadeOutDuration)
+        {
+            playerHitVignetteImage.color = Color.Lerp(startColor, Color.clear, elapsed / playerHitVignetteFadeOutDuration);
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+        playerHitVignetteImage.color = Color.clear; // 确保完全透明
+        vignetteCoroutine = null;
     }
 } 

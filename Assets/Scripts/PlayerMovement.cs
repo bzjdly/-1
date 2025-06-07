@@ -84,6 +84,12 @@ public class PlayerMovement : MonoBehaviour
         currentHP -= damageAmount;
         Debug.Log($"玩家受到 {damageAmount} 点伤害，当前血量：{currentHP}");
 
+        // 触发玩家受击反馈
+        if (HitFeedback.Instance != null)
+        {
+            HitFeedback.Instance.TriggerPlayerHitFeedback();
+        }
+
         if (currentHP <= 0)
         {
             currentHP = 0;
