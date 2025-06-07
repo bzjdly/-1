@@ -397,7 +397,7 @@ public class Enemy : MonoBehaviour
     }
 
     // 新增：处理敌人死亡过程的方法
-    void StartDyingProcess()
+    protected virtual void StartDyingProcess()
     {
         isDying = true;
         // 可选：改变颜色或透明度以视觉上表示死亡

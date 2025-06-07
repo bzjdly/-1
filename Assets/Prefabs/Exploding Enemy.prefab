@@ -11,10 +11,10 @@ GameObject:
   - component: {fileID: 8793286485874497198}
   - component: {fileID: 6379276890138968146}
   - component: {fileID: 6529789547870530212}
-  - component: {fileID: 4609201735854894642}
   - component: {fileID: 6185790699548729377}
+  - component: {fileID: 2747888550097614265}
   m_Layer: 0
-  m_Name: Slime Enemy
+  m_Name: Exploding Enemy
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -97,47 +97,6 @@ CircleCollider2D:
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
   m_Radius: 0.5
---- !u!114 &4609201735854894642
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6975462149498250711}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 933b590f04c51f8469a75211558a895f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveSpeed: 3
-  knockbackForce: 25.33
-  playerDamage: 1
-  isHeavyEnemy: 0
-  isSlimeDetonator: 1
-  heavyCollisionDamageMultiplier: 2
-  explosionPrefab: {fileID: 0}
-  explosionRadius: 3
-  explosionDamage: 10
-  player: {fileID: 0}
-  hitFlashTime: 0.08
-  hitColor: {r: 1, g: 0, b: 0, a: 1}
-  hitParticlePrefab: {fileID: 7536501802246876266, guid: 14f83f6b0a6755545bde35b931838099, type: 3}
-  hitParticleSpeed: 4
-  hitParticleCount: 8
-  maxHP: 5
-  currentHP: 0
-  hitStopTime: 0.18
-  knockbackMultiplier: 0.01
-  minWallImpactSpeed: 10
-  wallDamageMultiplier: 0.1
-  minEnemyImpactSpeed: 10
-  enemyDamageMultiplier: 0.5
-  knockbackDragMultiplier: 1
-  fullShotgunSlowdownDuration: 0.15
-  fullShotgunSlowdownFactor: 0.3
-  fullShotgunKnockbackDelay: 0.02
-  fullShotgunFixedKnockbackForce: 60
-  fullShotgunDebugColor: {r: 0, g: 0, b: 1, a: 1}
 --- !u!212 &6185790699548729377
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -180,7 +139,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: -9095717837082945937, guid: 207ee8102dd4143d288186ef0be518ee, type: 3}
-  m_Color: {r: 0.9308176, g: 0.8393915, b: 0.34832475, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -190,3 +149,43 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &2747888550097614265
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6975462149498250711}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1fcfe41ddbfe30643879dbb83c24f799, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 3
+  knockbackForce: 8
+  playerDamage: 1
+  player: {fileID: 0}
+  hitFlashTime: 0.08
+  hitColor: {r: 1, g: 0, b: 0, a: 1}
+  hitParticlePrefab: {fileID: 7536501802246876266, guid: 14f83f6b0a6755545bde35b931838099, type: 3}
+  hitParticleSpeed: 4
+  hitParticleCount: 12
+  maxHP: 3
+  currentHP: 0
+  hitStopTime: 0.18
+  knockbackMultiplier: 1
+  minWallImpactSpeed: 5
+  wallDamageMultiplier: 1
+  minEnemyImpactSpeed: 4
+  enemyDamageMultiplier: 0.5
+  knockbackDragMultiplier: 5
+  minVelocityForDestroy: 0.1
+  fullShotgunSlowdownDuration: 0.15
+  fullShotgunSlowdownFactor: 0.3
+  fullShotgunKnockbackDelay: 0.02
+  fullShotgunFixedKnockbackForce: 15
+  fullShotgunDebugColor: {r: 0, g: 0, b: 1, a: 1}
+  explosionRadius: 3
+  explosionDamage: 20
+  explosionForce: 10
+  explosionEffectPrefab: {fileID: 4366488021274299995, guid: 5c218d5c8efe2b9479d1afb8944ca8bd, type: 3}
