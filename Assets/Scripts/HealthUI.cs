@@ -11,21 +11,59 @@ public class HealthUI : MonoBehaviour
 
     void Start()
     {
+        // 尝试自动查找PlayerMovement实例
         if (playerMovement == null)
         {
-            Debug.LogError("HealthUI: PlayerMovement 引用未设置！请在Inspector中拖拽赋值。");
-            return;
+            playerMovement = PlayerMovement.Instance; // 尝试通过单例获取
+            if (playerMovement == null)
+            {
+                playerMovement = FindObjectOfType<PlayerMovement>(); // 尝试在场景中查找
+                if (playerMovement != null)
+                {
+                    Debug.LogWarning("HealthUI: PlayerMovement 引用已自动查找并赋值。");
+                }
+            }
+        }
+
+        if (playerMovement == null)
+        {
+            Debug.LogError("HealthUI: 无法找到 PlayerMovement 引用！请确保玩家对象存在且PlayerMovement脚本已挂载。");
+            // 如果玩家引用仍然为空，后续操作将无法进行，但不再直接返回，以便检查Slider
+        }
+
+        // 尝试自动查找HealthSlider实例
+        if (healthSlider == null)
+        {
+            healthSlider = GetComponent<Slider>(); // 尝试在当前GameObject上获取
+            if (healthSlider == null)
+            {
+                // 尝试查找名为 "HealthBarSlider" 的GameObject上的Slider组件
+                GameObject sliderObj = GameObject.Find("HealthBarSlider"); 
+                if (sliderObj != null)
+                {
+                    healthSlider = sliderObj.GetComponent<Slider>();
+                }
+                if (healthSlider != null)
+                {
+                    Debug.LogWarning("HealthUI: 血条Slider引用已自动查找并赋值（通过名称查找）。");
+                }
+            }
         }
 
         if (healthSlider == null)
         {
-            Debug.LogError("HealthUI: 血条Slider引用未设置！请在Inspector中拖拽赋值。");
-            return;
+            Debug.LogError("HealthUI: 无法找到血条Slider引用！请确保Slider对象存在且已正确设置。");
+            // 如果Slider引用仍然为空，后续UI更新将无效
         }
 
-        // 初始化Slider的最大值
-        healthSlider.maxValue = playerMovement.maxHP;
-        UpdateHealthUI();
+        // 只有当两者都找到时才初始化UI
+        if (playerMovement != null && healthSlider != null)
+        {
+            healthSlider.maxValue = playerMovement.maxHP;
+            UpdateHealthUI();
+        } else {
+            Debug.LogWarning("HealthUI: 无法初始化血条UI，缺少必要的引用。请检查上述错误日志。");
+        }
     }
 
     void Update()

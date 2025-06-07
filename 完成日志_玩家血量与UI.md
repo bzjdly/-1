@@ -27,6 +27,7 @@
    - 它引用 `PlayerMovement` 实例来获取血量信息。
    - 在启动时，它会将 `healthSlider` 的 `maxValue` 设置为玩家的 `maxHP`。
    - 在 `Update` 方法中，它会实时更新 `healthSlider` 的 `value` 为玩家的 `currentHP`。
+   - **优化：`HealthUI.cs` 现在具有自动查找 `PlayerMovement` 实例和 `Slider` 组件的能力。如果在Inspector中未手动拖拽赋值，脚本将尝试通过单例或在场景中查找相应对象。为了确保最佳性能和明确性，以及避免潜在查找问题，仍然强烈建议你手动拖拽赋值。**
 
 ## 数据结构
 - `PlayerMovement`：
@@ -58,8 +59,8 @@
 3.  **挂载 `HealthUI.cs` 脚本并分配引用**：
     - 将 `Assets/Scripts/HealthUI.cs` 脚本拖拽到 `UIManager` 游戏对象上。
     - 在 `UIManager` 的Inspector（检查器）面板中，找到 `HealthUI` (Script) 组件。
-    - 将你刚刚创建的 `HealthBarSlider` (Slider组件) 从Hierarchy（层级）面板拖拽到 `HealthUI` 脚本的 `Health Slider` 字段。
-    - 将你的玩家游戏对象 (挂载 `PlayerMovement.cs` 脚本的那个) 从Hierarchy（层级）面板拖拽到 `HealthUI` 脚本的 `Player Movement` 字段。
+    - **尽管 `HealthUI.cs` 现在支持自动查找，但仍强烈建议你手动将血条 `Slider` 组件从Hierarchy（层级）面板拖拽到 `HealthUI` 脚本的 `Health Slider` 字段，并将你的玩家游戏对象 (挂载 `PlayerMovement.cs` 脚本的那个) 拖拽到 `HealthUI` 脚本的 `Player Movement` 字段。这能确保最佳性能和明确性。**
+    - **如果血条仍不显示，请检查Unity的Console（控制台）面板是否有来自 `HealthUI` 脚本的 `LogError` 或 `LogWarning` 消息。这些消息会告诉你脚本是否成功找到了所需的引用。**
 4.  **调整敌人对玩家的伤害值**：
     - 选中你的 `Enemy` 预制体 (Prefab) (或场景中的敌人对象)。
     - 在Inspector（检查器）面板中找到 `Enemy` (Script) 组件。
