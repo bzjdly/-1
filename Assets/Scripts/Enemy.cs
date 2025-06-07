@@ -64,6 +64,8 @@ public class Enemy : MonoBehaviour
     public float fullShotgunKnockbackDelay = 0.02f;
     [Tooltip("满喷时临时增加的击退倍率")]
     public float fullShotgunTempKnockbackMultiplier = 1.5f;
+    [Tooltip("满喷时固定的击退力量")]
+    public float fullShotgunFixedKnockbackForce = 15.0f; // 新增：固定击退力量默认值
 
     [Header("调试设置")]
     [Tooltip("满喷命中时敌人显示的颜色")]
@@ -308,23 +310,17 @@ public class Enemy : MonoBehaviour
         // 等待设定的延迟时间
         yield return new WaitForSeconds(delay);
 
-        // 临时提高击退倍率
-        float originalMultiplier = knockbackMultiplier;
-        knockbackMultiplier *= fullShotgunTempKnockbackMultiplier;
-
-        // 应用存储的击退力量
+        // 应用存储的击退力量 (使用固定力量)
         // 注意：这里直接施加力量，不再调用 OnHit，因为 OnHit 会再次触发击中逻辑，导致循环或重复效果
         if (pendingKnockbackDir != Vector2.zero)
         {
-            rb.AddForce(pendingKnockbackDir * pendingKnockbackPower * knockbackMultiplier, ForceMode2D.Impulse);
+            // 使用固定的满喷击退力量
+            rb.AddForce(pendingKnockbackDir.normalized * fullShotgunFixedKnockbackForce, ForceMode2D.Impulse);
             StartKnockback(); // 启动击退状态
 
-            // 新增：输出击退信息和当前速度
-            Debug.Log($"[{gameObject.name}] 延迟应用击退 -> 方向: {pendingKnockbackDir.normalized:F2}, 力量: {pendingKnockbackPower * knockbackMultiplier:F2}, 当前速度: {rb.velocity.magnitude:F2}");
+            // 新增：输出击退信息和当前速度 (更新为固定力量)
+            Debug.Log($"[{gameObject.name}] 延迟应用满喷固定击退 -> 方向: {pendingKnockbackDir.normalized:F2}, 力量: {fullShotgunFixedKnockbackForce:F2}, 当前速度: {rb.velocity.magnitude:F2}");
         }
-
-        // 恢复击退倍率
-        knockbackMultiplier = originalMultiplier;
 
         // 在这里添加调用 HitFeedback 调整摄像机的逻辑 (稍后实现)
         // 例如: HitFeedback.Instance?.FocusCameraOnPlayerAndTarget(player, transform);

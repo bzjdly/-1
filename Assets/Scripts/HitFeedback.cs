@@ -204,12 +204,30 @@ public class HitFeedback : MonoBehaviour
 
         while (elapsed < transitionDuration)
         {
+            if (target == null)
+            {
+                Debug.LogWarning("摄像机聚焦目标已被销毁，停止聚焦。");
+                isFocusingOnMidpoint = false;
+                midpointFocusTarget = null;
+                focusCoroutine = null;
+                yield break;
+            }
+
             Vector3 midpointTargetPos = Vector3.Lerp(followTarget.position, target.position, 0.5f);
 
             mainCam.transform.position = Vector3.Lerp(startPos, new Vector3(midpointTargetPos.x, midpointTargetPos.y, mainCam.transform.position.z), elapsed / transitionDuration);
 
             elapsed += Time.unscaledDeltaTime;
             yield return null;
+        }
+
+        if (target == null)
+        {
+            Debug.LogWarning("摄像机聚焦目标已被销毁 (到达中点前)，停止聚焦。");
+            isFocusingOnMidpoint = false;
+            midpointFocusTarget = null;
+            focusCoroutine = null;
+            yield break;
         }
 
         Vector3 finalMidpointPos = Vector3.Lerp(followTarget.position, target.position, 0.5f);
@@ -223,6 +241,16 @@ public class HitFeedback : MonoBehaviour
 
         while (elapsed < transitionDuration)
         {
+            if (target == null)
+            {
+                Debug.LogWarning("摄像机聚焦目标已被销毁 (返回玩家过程中)，停止聚焦并立即跳回玩家。");
+                mainCam.transform.position = new Vector3(originalFollowPos.x, originalFollowPos.y, mainCam.transform.position.z);
+                isFocusingOnMidpoint = false;
+                midpointFocusTarget = null;
+                focusCoroutine = null;
+                yield break;
+            }
+
             mainCam.transform.position = Vector3.Lerp(startPos, returnTargetPos, elapsed / transitionDuration);
 
             elapsed += Time.unscaledDeltaTime;
