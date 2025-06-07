@@ -296,10 +296,10 @@ public class Enemy : MonoBehaviour
             pendingKnockbackPower = hitPower;
 
             // 触发慢动作
-            HitFeedback.Instance?.SlowMotion(fullShotgunSlowdownDuration, fullShotgunSlowdownFactor);
+            HitFeedback.Instance?.SlowMotion(fullShotgunSlowdownFactor, fullShotgunSlowdownDuration);
 
-            // 触发摄像机聚焦到玩家和该敌人的中点
-            HitFeedback.Instance?.FocusOnTargetMidpoint(transform);
+            // 触发摄像机拉远聚焦 (如果 HitFeedback 存在)
+            HitFeedback.Instance?.TriggerFullShotgunCameraEffect(transform);
 
             // 新增：满喷命中时临时变色
             if (sr != null)
