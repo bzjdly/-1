@@ -2809,6 +2809,56 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1480965947
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1480965949}
+  - component: {fileID: 1480965948}
+  m_Layer: 0
+  m_Name: EnemySpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1480965948
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1480965947}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9c3c203b6401b5419c7e865754ece05, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyPrefab: {fileID: 6975462149498250711, guid: 3f125f6c3f9f8234cbc38ac8bb73acaf, type: 3}
+  maxEnemies: 10
+  spawnCheckInterval: 5
+  spawnGroupMin: 2
+  spawnGroupMax: 3
+  spawnPoints: []
+--- !u!4 &1480965949
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1480965947}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1.6560943, y: 0.9440704, z: 0.0011228244}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1497812056
 GameObject:
   m_ObjectHideFlags: 0
@@ -3259,10 +3309,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 4609201735854894642, guid: 3f125f6c3f9f8234cbc38ac8bb73acaf, type: 3}
-      propertyPath: knockbackDragMultiplier
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 6975462149498250711, guid: 3f125f6c3f9f8234cbc38ac8bb73acaf, type: 3}
       propertyPath: m_Name
       value: Enemy (5)
@@ -3322,3 +3368,4 @@ SceneRoots:
   - {fileID: 8785971428090672953}
   - {fileID: 1497812058}
   - {fileID: 253010416}
+  - {fileID: 1480965949}

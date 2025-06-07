@@ -85,7 +85,7 @@ public class Enemy : MonoBehaviour
                 hitStopTimer -= Time.fixedDeltaTime;
             }
 
-            if (hitStopTimer <= 0f && rb.velocity.magnitude < 0.1f)
+            if (hitStopTimer <= 0f && rb.velocity.magnitude < 2.0f)
             {
                 EndKnockback();
             }

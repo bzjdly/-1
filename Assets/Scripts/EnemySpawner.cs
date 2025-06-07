@@ -1,0 +1,98 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+
+public class EnemySpawner : MonoBehaviour
+{
+    [Header("生成设置")]
+    [Tooltip("敌人预制体")]
+    public GameObject enemyPrefab;
+    [Tooltip("场上最大敌人数量阈值")]
+    public int maxEnemies = 10;
+    [Tooltip("检查生成条件的间隔时间（秒）")]
+    public float spawnCheckInterval = 5f;
+    [Tooltip("每组生成的敌人数量最小值")]
+    public int spawnGroupMin = 2;
+    [Tooltip("每组生成的敌人数量最大值")]
+    public int spawnGroupMax = 3;
+
+    [Header("生成点设置")]
+    [Tooltip("敌人可能的生成点")]
+    public Transform[] spawnPoints;
+
+    private float nextSpawnCheckTime;
+    private EnemyManager enemyManager;
+
+    void Start()
+    {
+        // 初始化下一次检查生成条件的时间
+        nextSpawnCheckTime = Time.time + spawnCheckInterval;
+        // 获取场景中的 EnemyManager 引用
+        enemyManager = FindObjectOfType<EnemyManager>();
+        if (enemyManager == null)
+        {
+            Debug.LogError("场景中找不到 EnemyManager 脚本，敌人将无法追踪玩家！");
+        }
+    }
+
+    void Update()
+    {
+        // 如果敌人预制体或生成点未设置，或者还没到下一次检查时间，则跳过
+        if (enemyPrefab == null || spawnPoints == null || spawnPoints.Length == 0 || Time.time < nextSpawnCheckTime)
+        {
+            return;
+        }
+
+        // 检查当前场上敌人的数量
+        int currentEnemies = FindObjectsOfType<Enemy>().Length;
+
+        // 如果当前敌人数量小于阈值，则尝试生成新的敌人
+        if (currentEnemies < maxEnemies)
+        {
+            SpawnEnemyGroup();
+            // 更新下一次检查生成条件的时间
+            nextSpawnCheckTime = Time.time + spawnCheckInterval;
+        }
+    }
+
+    void SpawnEnemyGroup()
+    {
+        // 确定本次生成敌人的数量
+        int enemiesToSpawn = Random.Range(spawnGroupMin, spawnGroupMax + 1);
+
+        // 确保有足够的生成点
+        if (spawnPoints.Length < enemiesToSpawn)
+        {
+            Debug.LogWarning("生成点数量不足，无法生成指定数量的敌人！");
+            enemiesToSpawn = spawnPoints.Length; // 生成点数量不足时，按实际数量生成
+        }
+
+        // 随机选择生成点并生成敌人
+        List<Transform> availableSpawnPoints = new List<Transform>(spawnPoints);
+
+        for (int i = 0; i < enemiesToSpawn; i++)
+        {
+            // 随机选择一个可用的生成点
+            int randomIndex = Random.Range(0, availableSpawnPoints.Count);
+            Transform spawnPoint = availableSpawnPoints[randomIndex];
+
+            // 在生成点位置实例化敌人
+            GameObject newEnemyGO = Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity);
+
+            // 获取 Enemy 组件并注册到 EnemyManager
+            Enemy newEnemy = newEnemyGO.GetComponent<Enemy>();
+            if (newEnemy != null && enemyManager != null)
+            {
+                enemyManager.RegisterEnemy(newEnemy);
+            } else if (newEnemy == null)
+            {
+                Debug.LogWarning($"生成的敌人预制体 \"{enemyPrefab.name}\" 没有挂载 Enemy 脚本！");
+            }
+
+            // 从可用列表中移除已使用的生成点，确保同一组不重复使用生成点
+            availableSpawnPoints.RemoveAt(randomIndex);
+        }
+
+        Debug.Log($"生成了 {enemiesToSpawn} 个敌人。当前场上敌人总数：{FindObjectsOfType<Enemy>().Length}");
+    }
+} 
