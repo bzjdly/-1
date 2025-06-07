@@ -47,25 +47,25 @@
 - 其他系统日志（根据需要列出）
 
 ## 用户需要操作的重点
-1.  **在Unity场景中创建UI Canvas和Slider**：
-    - 在Hierarchy面板右键 -> UI -> Canvas。这是所有UI的父物体。
-    - 在Canvas下右键 -> UI -> Slider。这是你的血条。
+1.  **在Unity场景中创建UI画布和滑块 (Slider)**：
+    - 在Hierarchy（层级）面板右键 -> UI -> Canvas（画布）。这是所有UI元素的父物体。
+    - 在Canvas下右键 -> UI -> Slider（滑块）。这将是你的血条。
     - 调整Slider的大小、位置和颜色，使其符合你的UI设计。
-    - (可选) 在Slider的子物体 `Fill Area/Fill` 上，可以将图片改为红色等代表血量的颜色。
+    - (可选) 在Slider的子物体 `Fill Area/Fill` 上，你可以将图片改为红色等代表血量的颜色。
     - (可选) 移除Slider子物体中的 `Handle Slide Area` 及其子物体，因为血条通常不需要手动拖拽。
-2.  **创建UI管理器GameObject**：
-    - 在Hierarchy面板右键 -> Create Empty，命名为 `UIManager` (或任何你喜欢的名称)。
-3.  **挂载 `HealthUI.cs` 脚本并赋值引用**：
-    - 将 `Assets/Scripts/HealthUI.cs` 脚本拖拽到 `UIManager` GameObject上。
-    - 在 `UIManager` 的Inspector面板中，找到 `HealthUI` (Script) 组件。
-    - 将你刚刚创建的 `HealthBarSlider` (Slider组件) 从Hierarchy面板拖拽到 `HealthUI` 脚本的 `Health Slider` 字段。
-    - 将你的玩家GameObject (挂载 `PlayerMovement.cs` 的那个) 从Hierarchy面板拖拽到 `HealthUI` 脚本的 `Player Movement` 字段。
+2.  **创建UI管理器游戏对象 (GameObject)**：
+    - 在Hierarchy（层级）面板右键 -> Create Empty（创建空物体），命名为 `UIManager` (或任何你喜欢的名称)。
+3.  **挂载 `HealthUI.cs` 脚本并分配引用**：
+    - 将 `Assets/Scripts/HealthUI.cs` 脚本拖拽到 `UIManager` 游戏对象上。
+    - 在 `UIManager` 的Inspector（检查器）面板中，找到 `HealthUI` (Script) 组件。
+    - 将你刚刚创建的 `HealthBarSlider` (Slider组件) 从Hierarchy（层级）面板拖拽到 `HealthUI` 脚本的 `Health Slider` 字段。
+    - 将你的玩家游戏对象 (挂载 `PlayerMovement.cs` 脚本的那个) 从Hierarchy（层级）面板拖拽到 `HealthUI` 脚本的 `Player Movement` 字段。
 4.  **调整敌人对玩家的伤害值**：
-    - 选中你的 `Enemy` 预制体 (或场景中的敌人对象)。
-    - 在Inspector面板中找到 `Enemy` (Script) 组件。
+    - 选中你的 `Enemy` 预制体 (Prefab) (或场景中的敌人对象)。
+    - 在Inspector（检查器）面板中找到 `Enemy` (Script) 组件。
     - 调整 `Player Damage` 参数，设置敌人每次攻击玩家造成的伤害点数。
 5.  **运行游戏**：
     - 运行场景，观察血条是否正确显示玩家血量，并测试敌人攻击玩家时血条是否减少。
-    - 观察控制台输出，确认玩家受到伤害和死亡的日志。
+    - 观察Console（控制台）输出，确认玩家受到伤害和死亡的日志。
 
 如果你需要进一步美化UI或添加其他血量相关的特效，请随时告诉我！ 
