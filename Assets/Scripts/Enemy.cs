@@ -7,11 +7,11 @@ public class Enemy : MonoBehaviour
     [Header("基础设置")]
     [Tooltip("移动速度")]
     public float moveSpeed = 3f;
-    [Tooltip("击退力度")]
+    [Tooltip("击退力度（基础值）")]
     public float knockbackForce = 8f;
 
     [Header("玩家引用")]
-    [Tooltip("玩家Transform，直接拖拽赋值")]
+    [Tooltip("玩家Transform，由EnemyManager自动赋值")]
     public Transform player;
 
     [Header("受击反馈")]
@@ -35,7 +35,7 @@ public class Enemy : MonoBehaviour
     [Header("击退控制")]
     [Tooltip("受击后停止移动时间（秒）")]
     public float hitStopTime = 0.18f;
-    [Tooltip("击退倍率（影响击退力度）")]
+    [Tooltip("普通击退倍率（影响OnHit方法中的击退力度）")]
     public float knockbackMultiplier = 1.0f;
     private float hitStopTimer = 0f;
 
@@ -56,19 +56,17 @@ public class Enemy : MonoBehaviour
     public float knockbackDragMultiplier = 5f;
 
     [Header("满喷打击反馈")]
-    [Tooltip("满喷时慢动作持续时间")]
+    [Tooltip("满喷时慢动作持续时间（秒）")]
     public float fullShotgunSlowdownDuration = 0.15f;
     [Tooltip("满喷时慢动作因子 (1.0为正常速度)")]
     public float fullShotgunSlowdownFactor = 0.3f;
     [Tooltip("满喷时应用击退前的延迟（秒，在慢动作开始后计算）")]
     public float fullShotgunKnockbackDelay = 0.02f;
-    [Tooltip("满喷时临时增加的击退倍率")]
-    public float fullShotgunTempKnockbackMultiplier = 1.5f;
     [Tooltip("满喷时固定的击退力量")]
-    public float fullShotgunFixedKnockbackForce = 15.0f; // 新增：固定击退力量默认值
+    public float fullShotgunFixedKnockbackForce = 15.0f;
 
     [Header("调试设置")]
-    [Tooltip("满喷命中时敌人显示的颜色")]
+    [Tooltip("满喷命中时敌人显示的颜色（仅调试用）")]
     public Color fullShotgunDebugColor = Color.blue;
 
     private Rigidbody2D rb;
@@ -78,13 +76,15 @@ public class Enemy : MonoBehaviour
     private bool isKnockedBack = false;
     private float originalDrag;
 
-    // 新增：用于追踪子弹批次击中次数
+    // 用于追踪子弹批次击中次数
     private Dictionary<int, int> bulletBatchHits = new Dictionary<int, int>();
-    // 新增：用于存储满喷时的击退信息
+    // 用于存储满喷时的击退信息
     private Vector2 pendingKnockbackDir;
     private float pendingKnockbackPower;
-    // 新增：用于存储满喷时的原始颜色，以便恢复
+    // 用于存储满喷时的原始颜色，以便恢复
     private Color fullShotgunOriginalColor;
+    // 新增：是否处于满喷击退状态
+    private bool isFullShotgunKnockedBack = false;
 
     void Awake()
     {
@@ -192,6 +192,12 @@ public class Enemy : MonoBehaviour
         {
             float impactSpeed = collision.relativeVelocity.magnitude;
             
+            // 新增：满喷击退敌人撞墙时触发震动
+            if (isFullShotgunKnockedBack && HitFeedback.Instance != null)
+            {
+                HitFeedback.Instance.TriggerCollisionShake();
+            }
+
             if (impactSpeed >= minWallImpactSpeed)
             {
                 int wallDamage = Mathf.RoundToInt((impactSpeed - minWallImpactSpeed) * wallDamageMultiplier);
@@ -215,6 +221,12 @@ public class Enemy : MonoBehaviour
         {
             float impactSpeed = collision.relativeVelocity.magnitude;
             
+            // 新增：满喷击退敌人撞其他敌人时触发震动
+            if (isFullShotgunKnockedBack && HitFeedback.Instance != null)
+            {
+                HitFeedback.Instance.TriggerCollisionShake();
+            }
+
             if (impactSpeed >= minEnemyImpactSpeed)
             {
                 int enemyDamage = Mathf.RoundToInt((impactSpeed - minEnemyImpactSpeed) * enemyDamageMultiplier);
@@ -256,10 +268,10 @@ public class Enemy : MonoBehaviour
     void EndKnockback()
     {
         isKnockedBack = false;
-        hitStopTimer = 0f;
         rb.drag = originalDrag;
-        // 新增：输出结束击退状态信息
-        Debug.Log($"[{gameObject.name}] 结束击退状态。");
+        hitStopTimer = 0f;
+        // 确保在击退结束时重置满喷击退标志
+        isFullShotgunKnockedBack = false;
     }
 
     // 新增：处理来自子弹的批量击中信息 (添加 hitDir 和 hitPower 参数)
@@ -307,28 +319,46 @@ public class Enemy : MonoBehaviour
     // 新增：延迟应用满喷击退的协程
     private IEnumerator ApplyFullShotgunKnockback(float delay)
     {
-        // 等待设定的延迟时间
-        yield return new WaitForSeconds(delay);
+        // 新增：存储满喷时的原始颜色用于调试显示
+        fullShotgunOriginalColor = sr.color;
 
-        // 应用存储的击退力量 (使用固定力量)
-        // 注意：这里直接施加力量，不再调用 OnHit，因为 OnHit 会再次触发击中逻辑，导致循环或重复效果
-        if (pendingKnockbackDir != Vector2.zero)
-        {
-            // 使用固定的满喷击退力量
-            rb.AddForce(pendingKnockbackDir.normalized * fullShotgunFixedKnockbackForce, ForceMode2D.Impulse);
-            StartKnockback(); // 启动击退状态
+        yield return new WaitForSeconds(delay); // 等待一小段延迟
 
-            // 新增：输出击退信息和当前速度 (更新为固定力量)
-            Debug.Log($"[{gameObject.name}] 延迟应用满喷固定击退 -> 方向: {pendingKnockbackDir.normalized:F2}, 力量: {fullShotgunFixedKnockbackForce:F2}, 当前速度: {rb.velocity.magnitude:F2}");
-        }
+        // 确保目标仍然存在（尽管在 OnBulletHitBatch 中已经检查过，这里再次保险）
+        if (gameObject == null) yield break;
 
-        // 在这里添加调用 HitFeedback 调整摄像机的逻辑 (稍后实现)
-        // 例如: HitFeedback.Instance?.FocusCameraOnPlayerAndTarget(player, transform);
+        // 施加固定力量的击退冲量
+        // 方向使用存储的 pendingKnockbackDir (已归一化)，力量使用 fullShotgunFixedKnockbackForce
+        rb.AddForce(pendingKnockbackDir.normalized * fullShotgunFixedKnockbackForce, ForceMode2D.Impulse);
 
-        // 新增：恢复颜色
-        if (sr != null)
-        {
-            sr.color = fullShotgunOriginalColor;
-        }
+        Debug.Log($"<color=orange>Full Shotgun Knockback Applied:</color> Dir={pendingKnockbackDir.normalized}, Force={fullShotgunFixedKnockbackForce}");
+
+        // 启动普通击退流程 (处理击退停顿和阻力)
+        StartKnockback();
+
+        // 新增：设置满喷击退标志
+        isFullShotgunKnockedBack = true;
+
+        // 在Inspector中设置调试颜色（可选）
+        if (sr != null) sr.color = fullShotgunDebugColor;
+
+        // 触发慢动作 (如果 HitFeedback 存在)
+        HitFeedback.Instance?.SlowMotion(fullShotgunSlowdownFactor, fullShotgunSlowdownDuration);
+
+        // 触发摄像机拉远聚焦 (如果 HitFeedback 存在)
+        HitFeedback.Instance?.TriggerFullShotgunCameraEffect(transform);
+
+
+        // 等待满喷慢动作持续时间结束后恢复颜色
+        // 注意：这里的等待时间应该匹配慢动作的持续时间，确保调试颜色显示足够长
+        yield return new WaitForSeconds(fullShotgunSlowdownDuration); // 使用慢动作持续时间
+
+         // 确保目标仍然存在
+        if (gameObject == null) yield break;
+
+        // 恢复原始颜色
+        if (sr != null) sr.color = fullShotgunOriginalColor;
+
+        // 注意：击退状态的结束和 isFullShotgunKnockedBack 标志的重置由 EndKnockback() 方法处理
     }
 } 
