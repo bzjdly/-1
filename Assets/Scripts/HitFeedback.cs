@@ -58,6 +58,8 @@ public class HitFeedback : MonoBehaviour
     public float fullShotgunZoomMinSize = 8f;
     [Tooltip("满喷时摄像机拉远，基于玩家和敌人距离的额外视野填充")]
     public float fullShotgunZoomPadding = 2f;
+    [Tooltip("满喷摄像机目标丢失后快速返回玩家的速度")]
+    public float fullShotgunReturnSpeed = 15f; // 新增：返回速度参数
 
     [Header("满喷击退碰撞震动设置")]
     [Tooltip("满喷击退敌人撞墙/人震动持续时间（秒）")]
@@ -239,14 +241,10 @@ public class HitFeedback : MonoBehaviour
              // 新增：检查目标是否被销毁
             if (target == null)
             {
-                Debug.LogWarning("满喷摄像机目标已被销毁 (过渡中)，停止效果并立即跳回原始状态。");
-                // 立即跳回原始跟随位置和大小
-                mainCam.transform.position = new Vector3(originalFollowPos.x, originalFollowPos.y, mainCam.transform.position.z);
-                mainCam.orthographicSize = originalOrthographicSize;
-                isFocusingOnMidpoint = false;
-                midpointFocusTarget = null;
-                focusCoroutine = null;
-                yield break; // 提前结束协程
+                Debug.LogWarning("满喷摄像机目标已被销毁 (过渡中)。");
+                Time.timeScale = 1f; // 立即停止慢动作
+                StartCoroutine(QuickReturnToPlayer()); // 启动快速返回协程
+                yield break; // 提前结束当前协程
             }
 
             // 插值位置和大小，使用非缩放时间
@@ -266,29 +264,36 @@ public class HitFeedback : MonoBehaviour
         // 在目标位置和大小保持一段时间 (使用缩放时间)
         yield return new WaitForSeconds(fullShotgunZoomHoldDuration);
 
-        // 平滑过渡回玩家跟随和原始相机大小
+        // 平滑过渡回玩家跟随和原始相机大小 (正常结束)
         elapsed = 0f;
         startPos = mainCam.transform.position; // 使用保持后的相机实际位置作为起点
         startSize = mainCam.orthographicSize; // 使用保持后的相机实际大小作为起点
+        Vector3 returnStartPos = startPos; // 返回动画的起始位置
+        float returnStartSize = startSize; // 返回动画的起始大小
+
+        // 检查目标是否在保持阶段被销毁
+        if (target == null)
+        {
+            Debug.LogWarning("满喷摄像机目标已被销毁 (保持中)。");
+            Time.timeScale = 1f; // 立即停止慢动作
+            StartCoroutine(QuickReturnToPlayer()); // 启动快速返回协程
+            yield break; // 提前结束当前协程
+        }
 
         while (elapsed < fullShotgunZoomTransitionDuration)
         {
              // 新增：检查目标是否被销毁 (返回过程中)
             if (target == null)
             {
-                Debug.LogWarning("满喷摄像机目标已被销毁 (返回中)，停止效果并立即跳回原始状态。");
-                 // 立即跳回原始跟随位置和大小
-                mainCam.transform.position = new Vector3(originalFollowPos.x, originalFollowPos.y, mainCam.transform.position.z);
-                mainCam.orthographicSize = originalOrthographicSize;
-                isFocusingOnMidpoint = false;
-                midpointFocusTarget = null;
-                focusCoroutine = null;
-                yield break; // 提前结束协程
+                Debug.LogWarning("满喷摄像机目标已被销毁 (返回中)。");
+                Time.timeScale = 1f; // 立即停止慢动作
+                StartCoroutine(QuickReturnToPlayer()); // 启动快速返回协程
+                yield break; // 提前结束当前协程
             }
 
              // 插值回原始跟随位置和大小，使用非缩放时间
-            mainCam.transform.position = Vector3.Lerp(startPos, new Vector3(originalFollowPos.x, originalFollowPos.y, mainCam.transform.position.z), elapsed / fullShotgunZoomTransitionDuration);
-            mainCam.orthographicSize = Mathf.Lerp(startSize, originalOrthographicSize, elapsed / fullShotgunZoomTransitionDuration);
+            mainCam.transform.position = Vector3.Lerp(returnStartPos, new Vector3(originalFollowPos.x, originalFollowPos.y, mainCam.transform.position.z), elapsed / fullShotgunZoomTransitionDuration);
+            mainCam.orthographicSize = Mathf.Lerp(returnStartSize, originalOrthographicSize, elapsed / fullShotgunZoomTransitionDuration);
 
             elapsed += Time.unscaledDeltaTime;
             yield return null;
@@ -303,6 +308,45 @@ public class HitFeedback : MonoBehaviour
         focusCoroutine = null;
     }
 
+    // 新增：目标丢失后快速返回玩家的协程
+    private IEnumerator QuickReturnToPlayer()
+    {
+        // 立即停止慢动作 (在调用此协程前已经停止，这里再次确保)
+        Time.timeScale = 1f;
+
+        float elapsed = 0f;
+        Vector3 startPos = mainCam.transform.position;
+        float startSize = mainCam.orthographicSize;
+        // 计算目标位置 (玩家当前位置，考虑边界)
+        Vector3 targetPos = ApplyBounds(followTarget.position);
+        targetPos.z = mainCam.transform.position.z; // 保持相机Z轴不变
+
+        // 计算过渡时间 (基于返回速度和距离/大小)
+        float positionDistance = Vector3.Distance(startPos, targetPos);
+        float sizeDistance = Mathf.Abs(startSize - originalOrthographicSize);
+        // 取最大距离来计算过渡时间，确保位置和大小都有足够时间平滑
+        float transitionDuration = Mathf.Max(positionDistance, sizeDistance) / fullShotgunReturnSpeed;
+        transitionDuration = Mathf.Max(0.1f, transitionDuration); // 确保过渡时间不会太短
+
+        while (elapsed < transitionDuration)
+        {
+            // 插值位置和大小，使用非缩放时间
+            mainCam.transform.position = Vector3.Lerp(startPos, targetPos, elapsed / transitionDuration);
+            mainCam.orthographicSize = Mathf.Lerp(startSize, originalOrthographicSize, elapsed / transitionDuration);
+
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        // 确保到达目标位置和大小
+         mainCam.transform.position = targetPos;
+         mainCam.orthographicSize = originalOrthographicSize;
+
+        isFocusingOnMidpoint = false;
+        midpointFocusTarget = null;
+        focusCoroutine = null;
+    }
+
     // 新增：触发满喷击退敌人的碰撞震动
     public void TriggerCollisionShake()
     {
@@ -310,10 +354,11 @@ public class HitFeedback : MonoBehaviour
         CameraShake(collisionShakeDuration, collisionShakeMagnitude);
     }
 
-    // helper function to apply bounds, can be reused or integrated
-    /*
+    // helper function to apply bounds
     private Vector3 ApplyBounds(Vector3 position)
     {
+         if (mainCam == null) return position; // Safety check
+
          float camHeight = mainCam.orthographicSize;
         float camWidth = camHeight * mainCam.aspect;
         float minX = worldLeft + camWidth;
@@ -324,5 +369,4 @@ public class HitFeedback : MonoBehaviour
         float y = Mathf.Clamp(position.y, minY, maxY);
         return new Vector3(x, y, position.z);
     }
-    */
 } 
