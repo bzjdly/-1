@@ -160,7 +160,7 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    public void OnHit(Vector2 hitDir, float hitPower, int damage = 1)
+    public void OnHit(Vector2 hitDir, float hitPower, int damage = 1, bool isFromExplosion = false)
     {
         if (isDying) return; // 已死亡的敌人不再受伤害
 
@@ -176,7 +176,7 @@ public class Enemy : MonoBehaviour
         
         if (currentHP <= 0)
         {
-            StartDyingProcess(); // 触发死亡过程，而非立即销毁
+            StartDyingProcess(isFromExplosion); // 触发死亡过程，并传递是否来源于爆炸
             // return; // 不再立即返回，让粒子效果等逻辑继续执行
         }
         if (hitParticlePrefab != null)
@@ -225,7 +225,7 @@ public class Enemy : MonoBehaviour
                 int wallDamage = Mathf.RoundToInt((impactSpeed - minWallImpactSpeed) * wallDamageMultiplier);
                 wallDamage = Mathf.Max(1, wallDamage);
                 
-                OnHit(Vector2.zero, 0f, wallDamage);
+                OnHit(Vector2.zero, 0f, wallDamage, false); // 墙壁伤害不是来自爆炸
                 rb.velocity = Vector2.zero;
 
                 if (isKnockedBack)
@@ -254,12 +254,12 @@ public class Enemy : MonoBehaviour
                 int enemyDamage = Mathf.RoundToInt((impactSpeed - minEnemyImpactSpeed) * enemyDamageMultiplier);
                 enemyDamage = Mathf.Max(1, enemyDamage);
 
-                OnHit(Vector2.zero, 0f, enemyDamage);
+                OnHit(Vector2.zero, 0f, enemyDamage, false); // 敌人互撞不是来自爆炸
 
                 Enemy otherEnemy = collision.gameObject.GetComponent<Enemy>();
                 if (otherEnemy != null)
                 {
-                    otherEnemy.OnHit(Vector2.zero, 0f, enemyDamage);
+                    otherEnemy.OnHit(Vector2.zero, 0f, enemyDamage, false); // 敌人互撞不是来自爆炸
                 }
             }
         }
@@ -397,7 +397,7 @@ public class Enemy : MonoBehaviour
     }
 
     // 新增：处理敌人死亡过程的方法
-    protected virtual void StartDyingProcess()
+    protected virtual void StartDyingProcess(bool triggeredByExplosion = false)
     {
         isDying = true;
         // 可选：改变颜色或透明度以视觉上表示死亡

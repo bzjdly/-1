@@ -12,14 +12,26 @@ public class ExplodingEnemy : Enemy
     [Tooltip("爆炸粒子预制体")]
     public GameObject explosionEffectPrefab;
 
-    protected override void StartDyingProcess()
+    protected override void StartDyingProcess(bool triggeredByExplosion = false)
     {
+        Debug.Log($"ExplodingEnemy ({gameObject.name}) StartDyingProcess 被调用. triggeredByExplosion: {triggeredByExplosion}"); // 调试日志
+
+        if (triggeredByExplosion)
+        {
+            // 如果是爆炸触发的死亡，则只执行基类的死亡流程，不再次爆炸
+            base.StartDyingProcess(true);
+            return;
+        }
+
+        // 如果不是爆炸触发的死亡，则正常爆炸
         Explode();
-        base.StartDyingProcess(); // 调用基类的死亡处理，等待动量归零再销毁
+        base.StartDyingProcess(false); // 调用基类的死亡处理，等待动量归零再销毁
     }
 
     void Explode()
     {
+        Debug.Log($"ExplodingEnemy ({gameObject.name}) Explode 被调用。"); // 调试日志
+
         // 播放爆炸粒子效果
         if (explosionEffectPrefab != null)
         {
@@ -55,7 +67,7 @@ public class ExplodingEnemy : Enemy
                 Enemy otherEnemy = hitCollider.GetComponent<Enemy>();
                 if (otherEnemy != null)
                 {
-                    otherEnemy.OnHit((hitCollider.transform.position - transform.position).normalized, explosionForce, explosionDamage);
+                    otherEnemy.OnHit((hitCollider.transform.position - transform.position).normalized, explosionForce, explosionDamage, true); // 伤害来自爆炸
                 }
             }
         }
